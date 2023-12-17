@@ -1,2 +1,7 @@
 # MNIST data
 MNIST
+
+# in `run.py` generated PDFs, NPZs and pts
+**/*.npz
+**/*.pdf
+**/*.pt

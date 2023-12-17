@@ -118,6 +118,7 @@ if __name__ == "__main__":
     # Train CNN:
     start_time = time.perf_counter()
     train_losses, val_losses, train_accuracies, val_accuracies = [], [], [], []
+    min_val_loss = float("inf")
 
     for epoch in range(args.num_epochs):
         t0 = time.perf_counter()
@@ -134,9 +135,7 @@ if __name__ == "__main__":
             # calculate accuracy:
             with torch.no_grad():
                 model.eval()
-                output_maxima, max_indices = torch.max(
-                    output, dim=1, keepdim=False
-                )
+                output_maxima, max_indices = output.max(dim=1, keepdim=False)
                 num_correct += (max_indices == labels).sum()
                 num_samples += batch_size
 
@@ -175,8 +174,8 @@ if __name__ == "__main__":
                 # TODO: is `val_loss` in on CPU or GPU?
 
                 # Calculate accuracy:
-                val_output_maxima, val_max_indices = torch.max(
-                    val_output, dim=1, keepdim=False
+                val_output_maxima, val_max_indices = val_output.max(
+                    dim=1, keepdim=False
                 )
                 # from our model, we get predictions of the shape
                 # ``[batch_size, C]``, where ``C`` is the num of classes and
@@ -184,7 +183,7 @@ if __name__ == "__main__":
                 val_num_correct += (val_max_indices == val_labels).sum()
                 val_num_samples += batch_size
 
-                valLoss_perEpoch.append()
+                valLoss_perEpoch.append(val_loss)
 
                 if val_loss < min_val_loss:
                     min_val_loss = val_loss
@@ -192,7 +191,6 @@ if __name__ == "__main__":
                         "state_dict": deepcopy(model.state_dict()),
                         "optimizer": deepcopy(optimizer.state_dict()),
                     }
-                    best_state_dict = checkpoint
 
                 if val_batch_idx % 5 == 0:
                     print(
@@ -221,7 +219,7 @@ if __name__ == "__main__":
         train_accuracies.append(train_acc)
         val_accuracies.append(val_acc)
         print(
-            "Epoch {:02}: {:.2f} sec ...\nAveraged training loss: {:.4f}\t\tTraining accuracy: {:.4f} %\nAveraged validation loss: {:.4f}\tValidation accuracy: {:.4f} %\n".format(
+            "Epoch {:02}: {:.2f} sec ...\nAveraged training loss: {:.4f}\t\tTraining accuracy: {:.2f} %\nAveraged validation loss: {:.4f}\tValidation accuracy: {:.2f} %\n".format(
                 epoch,
                 time.perf_counter() - t0,
                 train_losses[epoch],
@@ -246,8 +244,8 @@ if __name__ == "__main__":
         state=checkpoint,
         filename=os.path.join(
             args.saving_path,
-            f"CNN-lr-{args.learning_rate}-batch-size-{args.batch_size}-"
-            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}.pt",
+            f"CNN-{args.learning_rate}-{args.batch_size}-"
+            f"{datetime.now().strftime('%dp%mp%Y_%H:%M')}.pt",
         ),
     )
     count_parameters(model)
