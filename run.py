@@ -132,19 +132,15 @@ if __name__ == "__main__":
             batch_size = images.shape[0]
             output = model(images)
 
-            # Calculate accuracy:
+            # calculate accuracy:
             with torch.no_grad():  
                 model.eval()
                 output_maxima, max_indices = torch.max(
                     output, dim=1, keepdim=False
                 )
-                # from our model, we get predictions of the shape [batch_size, C], where C is the num of classes and in the case of MNIST, C = 10
                 num_correct += torch.sum(input=(max_indices == labels))
                 num_samples += batch_size
-                assert batch_size == max_indices.size(
-                    0
-                ), "The first index of output of the forward pass and the batch size do not agree"
-                # max_indices.size(0) is already an int
+                
             model.train()
             optimizer.zero_grad()
             cce_mean(output, labels).backward()
