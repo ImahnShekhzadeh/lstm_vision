@@ -60,11 +60,11 @@ def check_accuracy(loader, model, mode):
     Check the accuracy of a given model on a given dataset.
 
     Params:
-        loader (torch.utils.data.DataLoader)        -- The dataloader of the 
+        loader (torch.utils.data.DataLoader)        -- The dataloader of the
             dataset on which we want to check the accuracy.
-        model (torch.nn)                            -- Model for which we want 
+        model (torch.nn)                            -- Model for which we want
             the total number of parameters.
-        mode (str):                                 -- Mode in which the model 
+        mode (str):                                 -- Mode in which the model
             is in. Either "train" or "test".
     """
     assert mode in ["train", "test"]
@@ -73,8 +73,8 @@ def check_accuracy(loader, model, mode):
     num_correct = 0
     num_samples = 0
 
-    with torch.no_grad():  
-        for (images, labels) in loader:
+    with torch.no_grad():
+        for images, labels in loader:
             images = images.to(device=device)
             images = torch.squeeze(
                 input=images, dim=1

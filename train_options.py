@@ -20,7 +20,7 @@ class TrainOptions:
             "--seed_number",
             type=int,
             default=None,
-            help="If specified, seed number is used for RNG.",        
+            help="If specified, seed number is used for RNG.",
         )
         parser.add_argument(
             "--sequence_length",

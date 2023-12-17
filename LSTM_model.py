@@ -5,10 +5,12 @@ import torch.nn.functional as F  # ReLU activation function, etc.
 # Set device:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 ## CREATE AN LSTM:
 class LSTM(nn.Module):
     """This class creates an NN for the MNIST dataset. The MNIST dataset has the shape (batch_size, 1, 28, 28)
-    when loading it, and we can interpret this shape as 28 sequences, each with 28 features."""
+    when loading it, and we can interpret this shape as 28 sequences, each with 28 features.
+    """
 
     def __init__(
         self,

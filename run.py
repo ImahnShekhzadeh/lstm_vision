@@ -1,17 +1,17 @@
 import os
 import sys
 import time
+from copy import deepcopy
 from datetime import datetime
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 from torchinfo import summary
+from torchvision import datasets, transforms
 
-from copy import deepcopy
 from functions import (
     check_accuracy,
     count_parameters,
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     args = TrainOptions().args
     print(args)
 
-    if args.seed_number is not None: 
+    if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
     # Set device:
@@ -91,9 +91,11 @@ if __name__ == "__main__":
         dataset=test_dataset, batch_size=args.batch_size, shuffle=True
     )
 
-    print(f"We have {len(train_subset)}, {len(val_subset)}, "
-          f"{len(test_dataset)} MNIST numbers to train, validate and test our "
-          f"LSTM with.")
+    print(
+        f"We have {len(train_subset)}, {len(val_subset)}, "
+        f"{len(test_dataset)} MNIST numbers to train, validate and test our "
+        f"LSTM with."
+    )
 
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
@@ -121,7 +123,7 @@ if __name__ == "__main__":
         t0 = time.perf_counter()
 
         trainingLoss_perEpoch, valLoss_perEpoch = [], []
-        num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0  
+        num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
             images = images.to(device)  # shape: ``(batch_size, 1, 28, 28)``
@@ -133,14 +135,14 @@ if __name__ == "__main__":
             output = model(images)
 
             # calculate accuracy:
-            with torch.no_grad():  
+            with torch.no_grad():
                 model.eval()
                 output_maxima, max_indices = torch.max(
                     output, dim=1, keepdim=False
                 )
                 num_correct += torch.sum(input=(max_indices == labels))
                 num_samples += batch_size
-                
+
             model.train()
             optimizer.zero_grad()
             cce_mean(output, labels).backward()
@@ -163,7 +165,7 @@ if __name__ == "__main__":
                 )
 
         # Validation stuff:
-        with torch.no_grad(): 
+        with torch.no_grad():
             model.eval()
             for val_batch_idx, (val_images, val_labels) in enumerate(
                 val_loader
@@ -182,8 +184,8 @@ if __name__ == "__main__":
                 val_output_maxima, val_max_indices = torch.max(
                     val_output, dim=1, keepdim=False
                 )
-                # from our model, we get predictions of the shape 
-                # ``[batch_size, C]``, where ``C`` is the num of classes and 
+                # from our model, we get predictions of the shape
+                # ``[batch_size, C]``, where ``C`` is the num of classes and
                 # in the case of MNIST, ``C = 10``
                 val_num_correct += torch.sum(
                     input=(val_max_indices == val_labels)
@@ -213,15 +215,14 @@ if __name__ == "__main__":
                             100
                             * val_batch_idx
                             * batch_size
-                            / len(val_loader.dataset), 
+                            / len(val_loader.dataset),
                             cce_mean(val_output, val_labels).item(),
                             time.perf_counter() - t0,
                         )
                     )
 
         train_losses.append(
-            np.sum(trainingLoss_perEpoch, axis=0)
-            / len(train_loader.dataset)
+            np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
         )
         val_losses.append(
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
@@ -241,22 +242,24 @@ if __name__ == "__main__":
                 1e2 * val_acc,
             )
         )
-        # NOTE: Delete 
-        print(f"Cuda memory [MB]: {torch.cuda.memory_allocated(device) / 1024 ** 2}")
+        # NOTE: Delete
+        print(
+            f"Cuda memory [MB]: {torch.cuda.memory_allocated(device) / 1024 ** 2}"
+        )
         model.train()
     print(
         "\nThe whole training of {} epoch(s) took {} seconds".format(
             args.num_epochs, round(time.perf_counter() - start_time, 2)
         )
     )
-    
+
     # Save one checkpoint at the end of training:
     save_checkpoint(
         state=checkpoint,
         filename=os.path.join(
-            args.saving_path, 
+            args.saving_path,
             f"CNN-lr-{args.learning_rate}-batch-size-{args.batch_size}-"
-            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}.pt"
+            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}.pt",
         ),
     )
     count_parameters(model)
@@ -276,9 +279,9 @@ if __name__ == "__main__":
     # Save the arrays in npz format as well:
     np.savez(
         os.path.join(
-            args.saving_path, 
+            args.saving_path,
             f"CNN-lr-{args.learning_rate}-batch-size-{args.batch_size}-"
-            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}"
+            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}",
         ),
         A=train_losses,
         B=val_losses,
