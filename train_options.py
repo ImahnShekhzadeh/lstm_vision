@@ -86,10 +86,4 @@ class TrainOptions:
             action="store_true",
             help="Whether to use bidirectional LSTM (True) or not (False). Default: True.",
         )
-        parser.add_argument(
-            "--test",
-            type=float,
-            default=None,
-            help="If the random variables for the noise are drawn from a Gaussian distribution, then this argument determines the standard deviation of the Gaussian distribution.",
-        )
         self.args = parser.parse_args()
