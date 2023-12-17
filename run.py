@@ -126,10 +126,7 @@ if __name__ == "__main__":
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
-            images = images.to(device)  # shape: ``(batch_size, 1, 28, 28)``
-            images = torch.squeeze(
-                input=images, dim=1
-            )  # shape: ``(batch_size, 28, 28)``, otherwise RNN throws error
+            images = images.squeeze_(dim=1).to(device)  # ``(N, 1, 28, 28)``
             labels = labels.to(device)
             batch_size = images.shape[0]
             output = model(images)
@@ -170,10 +167,7 @@ if __name__ == "__main__":
             for val_batch_idx, (val_images, val_labels) in enumerate(
                 val_loader
             ):
-                val_images = val_images.to(device)
-                val_images = torch.squeeze(
-                    input=val_images, dim=1
-                )  # shape: ``(batch_size, 28, 28)``, otherwise RNN throws error
+                val_images = val_images.squeeze_(dim=1).to(device)
                 val_labels = val_labels.to(device)
                 batch_size = val_images.shape[0]
                 val_output = model(val_images)
