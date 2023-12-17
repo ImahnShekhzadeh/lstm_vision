@@ -1,4 +1,4 @@
-# infra
+# mnist-lstm
 Repository containing code to train an LSTM, e.g. on MNIST. Note that this repository is more for showing that LSTMs can also be used to do image classification. To use the right inductive bias, a CNN/ResNet/DenseNet/etc. should be preferred, since an LSTM treats the image sequentially, i.e. pixel by pixel. 
 
 ## Options
@@ -40,3 +40,11 @@ docker build -f Dockerfile -t mnist-lstm:1.0.0 .
 docker run --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.0.0
 ```
 where I assume that the `MNIST` folder already exists locally. If not, please download it manually first.
+
+## Results
+
+Training a bidirectional LSTM for `10` epochs results in,
+```
+Train data: Got 48974/50000 with accuracy 97.95 %
+Test data: Got 9764/10000 with accuracy 97.64 %
+```
