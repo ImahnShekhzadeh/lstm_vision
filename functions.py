@@ -90,7 +90,7 @@ def check_accuracy(loader, model, mode):
 
         print(
             f"{mode.capitalize()} data: Got {num_correct}/{num_samples} with "
-            f"accuracy {100 * float(num_correct) / float(num_samples):.2f} /"
+            f"accuracy {(100 * num_correct / num_samples):.2f} %"
         )
 
 

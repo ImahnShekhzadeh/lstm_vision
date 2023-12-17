@@ -91,11 +91,9 @@ if __name__ == "__main__":
         dataset=test_dataset, batch_size=args.batch_size, shuffle=True
     )
 
-    print(
-        f"We have {len(train_subset)}, {len(val_subset)}, "
-        f"{len(test_dataset)} MNIST numbers to train, validate and test our "
-        f"LSTM with."
-    )
+    print(f"We have {len(train_subset)}, {len(val_subset)}, "
+          f"{len(test_dataset)} MNIST numbers to train, validate and test our "
+          "LSTM with.")
 
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
@@ -117,7 +115,7 @@ if __name__ == "__main__":
 
     # Train CNN:
     start_time = time.perf_counter()
-    train_losses, val_losses, train_accuracies, val_accuracies = [], [], [], []
+    train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
     for epoch in range(args.num_epochs):
@@ -145,20 +143,15 @@ if __name__ == "__main__":
             optimizer.step()
 
             trainingLoss_perEpoch.append(cce_sum(output, labels).item())
+            
             if batch_idx % 10 == 0:
-                print(
-                    "Train Epoch: {} [{:05d} / {} ({:05.2f} %)]\tTraining Loss: {:.4f}\tElapsed Time: {:05.2f} s".format(
-                        epoch,
-                        batch_idx * batch_size,
-                        len(train_loader.dataset),
-                        100
-                        * batch_idx
-                        * batch_size
-                        / len(train_loader.dataset),
-                        cce_mean(output, labels).item(),
-                        time.perf_counter() - t0,
-                    )
+                prog_perc = (
+                    100 * batch_idx * batch_size / len(train_loader.dataset)
                 )
+                print(f"Train Epoch: {epoch} [{batch_idx * batch_size:05d} / "
+                      f"{len(train_loader.dataset)} ({prog_perc:05.2f} %)] "
+                      f"\tTraining Loss: {cce_mean(output, labels).item():.4f}"
+                      f"\tElapsed Time: {(time.perf_counter() - t0):05.2f} s")
 
         # Validation stuff:
         with torch.no_grad():
@@ -192,20 +185,18 @@ if __name__ == "__main__":
                         "optimizer": deepcopy(optimizer.state_dict()),
                     }
 
-                if val_batch_idx % 5 == 0:
-                    print(
-                        "Valid Epoch: {} [{:05d} / {} ({:05.2f} %)]\tValidation Loss: {:.4f}\tElapsed Time: {:05.2f} s".format(
-                            epoch,
-                            val_batch_idx * batch_size,
-                            len(val_loader.dataset),
-                            100
-                            * val_batch_idx
-                            * batch_size
-                            / len(val_loader.dataset),
-                            cce_mean(val_output, val_labels).item(),
-                            time.perf_counter() - t0,
-                        )
+                if (val_batch_idx % 5) == 0:
+                    prog = (
+                        100 * val_batch_idx * batch_size / 
+                        len(val_loader.dataset)
                     )
+                    print(f"Train Epoch: {epoch} "
+                          f"[{val_batch_idx * batch_size:05d} / "
+                          f"{len(val_loader.dataset)} ({prog_perc:05.2f} %)]"
+                          f"\tValidation Loss: "
+                          f"{cce_mean(val_output, val_labels).item():.4f}\t "
+                          f"Elapsed time: "
+                          f"{(time.perf_counter() - t0):05.2f} s")
 
         train_losses.append(
             np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
@@ -214,30 +205,16 @@ if __name__ == "__main__":
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
         )
         # Calculate accuracies for each epoch:
-        train_acc = int(num_correct) / num_samples
-        val_acc = int(val_num_correct) / val_num_samples
-        train_accuracies.append(train_acc)
-        val_accuracies.append(val_acc)
-        print(
-            "Epoch {:02}: {:.2f} sec ...\nAveraged training loss: {:.4f}\t\tTraining accuracy: {:.2f} %\nAveraged validation loss: {:.4f}\tValidation accuracy: {:.2f} %\n".format(
-                epoch,
-                time.perf_counter() - t0,
-                train_losses[epoch],
-                1e2 * train_acc,
-                val_losses[epoch],
-                1e2 * val_acc,
-            )
-        )
-        # NOTE: Delete
-        print(
-            f"Cuda memory [MB]: {torch.cuda.memory_allocated(device) / 1024 ** 2}"
-        )
+        train_accs.append(num_correct / num_samples)
+        val_accs.append(val_num_correct / val_num_samples)
+        print(f"Epoch {epoch:02}: {time.perf_counter() - t0:.2f} sec ..."
+              f"\nAveraged training loss: {train_losses[epoch]:.4f} "
+              f"\t\tTraining accuracy: {1e2 * train_accs[epoch]:.2f} "
+              f"%\nAveraged validation loss: {val_losses[epoch]:.4f} "
+              f"\tValidation accuracy: {1e2 * val_accs[epoch]:.2f} %\n")
         model.train()
-    print(
-        "\nThe whole training of {} epoch(s) took {} seconds".format(
-            args.num_epochs, round(time.perf_counter() - start_time, 2)
-        )
-    )
+    print(f"\nTraining of {args.num_epochs} epoch(s) took "
+          f"{(time.perf_counter() - start_time):.2f} seconds")
 
     # Save one checkpoint at the end of training:
     save_checkpoint(
@@ -256,7 +233,7 @@ if __name__ == "__main__":
         args.num_epochs, train_losses, val_losses, args.saving_path
     )
     produce_acc_plot(
-        args.num_epochs, train_accuracies, val_accuracies, args.saving_path
+        args.num_epochs, train_accs, val_accs, args.saving_path
     )
     confusion_matrix = produce_and_print_confusion_matrix(
         args.num_classes, test_loader, model, args.saving_path
@@ -271,8 +248,8 @@ if __name__ == "__main__":
         ),
         A=train_losses,
         B=val_losses,
-        C=train_accuracies,
-        D=val_accuracies,
+        C=train_accs,
+        D=val_accs,
     )
     np.savez(
         os.path.join(args.saving_path, "confusion_matrix"), A=confusion_matrix
