@@ -36,21 +36,6 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
 
-    # Print model summary:
-    model = LSTM(
-        input_size=args.input_size,
-        num_layers=args.num_layers,
-        hidden_size=args.hidden_size,
-        num_classes=args.num_classes,
-        sequence_length=args.sequence_length,
-        bidirectional=args.bidirectional,
-    ).to(device)
-    print(
-        summary(
-            model, (args.batch_size, args.sequence_length, args.input_size)
-        )
-    )
-
     # Transform and load the data:
     trafo = transforms.Compose(
         [
@@ -90,10 +75,25 @@ if __name__ == "__main__":
     test_loader = DataLoader(
         dataset=test_dataset, batch_size=args.batch_size, shuffle=True
     )
-
+    
     print(f"We have {len(train_subset)}, {len(val_subset)}, "
           f"{len(test_dataset)} MNIST numbers to train, validate and test our "
           "LSTM with.")
+
+    # Print model summary:
+    model = LSTM(
+        input_size=args.input_size,
+        num_layers=args.num_layers,
+        hidden_size=args.hidden_size,
+        num_classes=len(full_train_dataset.classes),
+        sequence_length=args.sequence_length,
+        bidirectional=args.bidirectional,
+    ).to(device)
+    print(
+        summary(
+            model, (args.batch_size, args.sequence_length, args.input_size)
+        )
+    )
 
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
@@ -134,7 +134,7 @@ if __name__ == "__main__":
             with torch.no_grad():
                 model.eval()
                 output_maxima, max_indices = output.max(dim=1, keepdim=False)
-                num_correct += (max_indices == labels).sum()
+                num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
 
             model.train()
@@ -150,8 +150,8 @@ if __name__ == "__main__":
                 )
                 print(f"Train Epoch: {epoch} [{batch_idx * batch_size:05d} / "
                       f"{len(train_loader.dataset)} ({prog_perc:05.2f} %)] "
-                      f"\tTraining Loss: {cce_mean(output, labels).item():.4f}"
-                      f"\tElapsed Time: {(time.perf_counter() - t0):05.2f} s")
+                      f"\tTrain loss: {cce_mean(output, labels).item():.4f}"
+                      f"\tElapsed time: {(time.perf_counter() - t0):05.2f} s")
 
         # Validation stuff:
         with torch.no_grad():
@@ -173,7 +173,9 @@ if __name__ == "__main__":
                 # from our model, we get predictions of the shape
                 # ``[batch_size, C]``, where ``C`` is the num of classes and
                 # in the case of MNIST, ``C = 10``
-                val_num_correct += (val_max_indices == val_labels).sum()
+                val_num_correct += (
+                    (val_max_indices == val_labels).sum().cpu().item()
+                )
                 val_num_samples += batch_size
 
                 valLoss_perEpoch.append(val_loss)
@@ -186,15 +188,15 @@ if __name__ == "__main__":
                     }
 
                 if (val_batch_idx % 5) == 0:
-                    prog = (
+                    prog_perc = (
                         100 * val_batch_idx * batch_size / 
                         len(val_loader.dataset)
                     )
-                    print(f"Train Epoch: {epoch} "
+                    print(f"Val Epoch: {epoch} "
                           f"[{val_batch_idx * batch_size:05d} / "
                           f"{len(val_loader.dataset)} ({prog_perc:05.2f} %)]"
-                          f"\tValidation Loss: "
-                          f"{cce_mean(val_output, val_labels).item():.4f}\t "
+                          f"\t\tVal loss: "
+                          f"{cce_mean(val_output, val_labels).item():.4f}\t"
                           f"Elapsed time: "
                           f"{(time.perf_counter() - t0):05.2f} s")
 
@@ -208,12 +210,12 @@ if __name__ == "__main__":
         train_accs.append(num_correct / num_samples)
         val_accs.append(val_num_correct / val_num_samples)
         print(f"Epoch {epoch:02}: {time.perf_counter() - t0:.2f} sec ..."
-              f"\nAveraged training loss: {train_losses[epoch]:.4f} "
-              f"\t\tTraining accuracy: {1e2 * train_accs[epoch]:.2f} "
-              f"%\nAveraged validation loss: {val_losses[epoch]:.4f} "
-              f"\tValidation accuracy: {1e2 * val_accs[epoch]:.2f} %\n")
+              f"\nAveraged train loss: {train_losses[epoch]:.4f}"
+              f"\tTrain accuracy: {1e2 * train_accs[epoch]:.2f}%"
+              f"\nAveraged val loss: {val_losses[epoch]:.4f}"
+              f"\tVal accuracy: {1e2 * val_accs[epoch]:.2f} %\n")
         model.train()
-    print(f"\nTraining of {args.num_epochs} epoch(s) took "
+    print(f"\nTraining {args.num_epochs} epoch(s) took "
           f"{(time.perf_counter() - start_time):.2f} seconds")
 
     # Save one checkpoint at the end of training:
@@ -236,7 +238,7 @@ if __name__ == "__main__":
         args.num_epochs, train_accs, val_accs, args.saving_path
     )
     confusion_matrix = produce_and_print_confusion_matrix(
-        args.num_classes, test_loader, model, args.saving_path
+        len(full_train_dataset.classes), test_loader, model, args.saving_path
     )
 
     # Save the arrays in npz format as well:

@@ -59,12 +59,6 @@ class TrainOptions:
             help="Learning rate for the training of the NN.",
         )
         parser.add_argument(
-            "--num_classes",
-            type=int,
-            default=10,
-            help="Number of classes NN has to predict at the end.",
-        )
-        parser.add_argument(
             "--num_epochs",
             type=int,
             default=int(1e1),

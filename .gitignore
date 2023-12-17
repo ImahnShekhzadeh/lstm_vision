@@ -5,3 +5,6 @@ MNIST
 **/*.npz
 **/*.pdf
 **/*.pt
+
+# PyCache
+__pycache__

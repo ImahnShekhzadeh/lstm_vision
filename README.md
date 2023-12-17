@@ -24,13 +24,17 @@ options:
                         Number of channels in the MNIST input images.
   --learning_rate LEARNING_RATE
                         Learning rate for the training of the NN.
-  --num_classes NUM_CLASSES
-                        Number of classes NN has to predict at the end.
   --num_epochs NUM_EPOCHS
                         Number of epochs used for training of the NN.
   --batch_size BATCH_SIZE
                         Number of batches that are used for one ADAM update rule.
   --load_cp             Whether to load preexisting checkpoint(s) of the model.
   --bidirectional       Whether to use bidirectional LSTM (True) or not (False). Default: True.
-  --test TEST           If the random variables for the noise are drawn from a Gaussian distribution, then this argument determines the standard deviation of the Gaussian distribution.
+```
+
+## Run
+
+I ran the script `run.py` with the following options:
+```
+python3 -B run.py --seed_number 0 
 ```
