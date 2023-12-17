@@ -137,7 +137,7 @@ if __name__ == "__main__":
                 output_maxima, max_indices = torch.max(
                     output, dim=1, keepdim=False
                 )
-                num_correct += torch.sum(input=(max_indices == labels))
+                num_correct += (max_indices == labels).sum()
                 num_samples += batch_size
 
             model.train()
@@ -181,14 +181,8 @@ if __name__ == "__main__":
                 # from our model, we get predictions of the shape
                 # ``[batch_size, C]``, where ``C`` is the num of classes and
                 # in the case of MNIST, ``C = 10``
-                val_num_correct += torch.sum(
-                    input=(val_max_indices == val_labels)
-                )
+                val_num_correct += (val_max_indices == val_labels).sum()
                 val_num_samples += batch_size
-                assert batch_size == val_max_indices.size(
-                    0
-                ), "The first index of output of the forward pass and the batch size do not agree!!"
-                # val_max_indices.size(0) is already an int
 
                 valLoss_perEpoch.append()
 
