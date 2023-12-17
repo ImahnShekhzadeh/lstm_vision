@@ -34,7 +34,9 @@ options:
 
 ## Run
 
-I ran the script `run.py` with the following options:
+I ran the script `run.py` as follows:
 ```
-python3 -B run.py --seed_number 0 
+docker build -f Dockerfile -t mnist-lstm:1.0.0 .
+docker run --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.0.0
 ```
+where I assume that the `MNIST` folder already exists locally. If not, please download it manually first.

@@ -1,0 +1,32 @@
+[project]
+
+name = "meta_lfi"
+version = "1.0.0"
+description = "MNIST-LSTM"
+authors = [
+    {name = "Imahn Shekhzadeh", email = "imahn.shekhzadeh@unige.ch"},
+]
+license = {text = "MIT license"}
+requires-python = ">=3.10"
+
+dependencies = [
+    "learn2learn~=0.2.0", 
+    "isort~=5.12.0", 
+    "black~=23.10.1", 
+    "cloudpathlib[s3]~=0.16.0", 
+    "wandb~=0.16.0",
+    "termcolor~=2.3.0",
+    "torchinfo~=1.8.0", 
+    "prettytable~=3.9.0",
+    "python-dotenv~=1.0.0",
+    "matplotlib~=3.8.2",
+]
+
+[tool.isort]
+
+profile = "black"
+# necessary to get `isort` working in Docker container: 
+overwrite_in_place = true
+
+[tool.black]
+line-length = 79
