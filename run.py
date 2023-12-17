@@ -95,16 +95,6 @@ if __name__ == "__main__":
           f"{len(test_dataset)} MNIST numbers to train, validate and test our "
           f"LSTM with.")
 
-    # Initialize network:
-    model = LSTM(
-        input_size=args.input_size,
-        num_layers=args.num_layers,
-        hidden_size=args.hidden_size,
-        num_classes=args.num_classes,
-        sequence_length=args.sequence_length,
-        bidirectional=args.bidirectional,
-    ).to(device)
-
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
     cce_sum = nn.CrossEntropyLoss(reduction="sum")
@@ -143,7 +133,7 @@ if __name__ == "__main__":
             output = model(images)
 
             # Calculate accuracy:
-            with torch.no_grad():  # don't waste computation by calculating gradients when we don't need them
+            with torch.no_grad():  
                 model.eval()
                 output_maxima, max_indices = torch.max(
                     output, dim=1, keepdim=False
