@@ -54,7 +54,7 @@ if __name__ == "__main__":
         transform=trafo,
         target_transform=None,
         download=True,
-    )  # 60k images for MNIST
+    )  # `60`k images for MNIST
     print(len(full_train_dataset))
 
     train_subset, val_subset = random_split(
