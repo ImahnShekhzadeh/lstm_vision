@@ -48,3 +48,4 @@ Training a bidirectional LSTM for `10` epochs results in,
 Train data: Got 48974/50000 with accuracy 97.95 %
 Test data: Got 9764/10000 with accuracy 97.64 %
 ```
+On an NVIDIA RTX 4090, training for `10` epochs takes about `101` s, and in total about `1.7` GB of memory is required.

@@ -167,7 +167,7 @@ if __name__ == "__main__":
                 val_images = val_images.squeeze_(dim=1).to(device)
                 val_labels = val_labels.to(device)
                 batch_size = val_images.shape[0]
-                val_output = model(val_images)
+                val_output = model(val_images)  # ``[batch_size, C]``
                 val_loss = cce_sum(val_output, val_labels).item()
                 # TODO: is `val_loss` in on CPU or GPU?
 
@@ -175,9 +175,6 @@ if __name__ == "__main__":
                 val_output_maxima, val_max_indices = val_output.max(
                     dim=1, keepdim=False
                 )
-                # from our model, we get predictions of the shape
-                # ``[batch_size, C]``, where ``C`` is the num of classes and
-                # in the case of MNIST, ``C = 10``
                 val_num_correct += (
                     (val_max_indices == val_labels).sum().cpu().item()
                 )
@@ -230,7 +227,7 @@ if __name__ == "__main__":
         device=device, local_msg=f"Training {args.num_epochs} epoch(s)"
     )
 
-    # Save one checkpoint at the end of training:
+    # save checkpoint
     save_checkpoint(
         state=checkpoint,
         filename=os.path.join(
@@ -249,20 +246,4 @@ if __name__ == "__main__":
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
     confusion_matrix = produce_and_print_confusion_matrix(
         len(full_train_dataset.classes), test_loader, model, args.saving_path
-    )
-
-    # Save the arrays in npz format as well:
-    np.savez(
-        os.path.join(
-            args.saving_path,
-            f"CNN-lr-{args.learning_rate}-batch-size-{args.batch_size}-"
-            f"{datetime.now().strftime('%d-%m-%Y-%H:%M')}",
-        ),
-        A=train_losses,
-        B=val_losses,
-        C=train_accs,
-        D=val_accs,
-    )
-    np.savez(
-        os.path.join(args.saving_path, "confusion_matrix"), A=confusion_matrix
     )
