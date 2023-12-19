@@ -219,7 +219,7 @@ if __name__ == "__main__":
         print(
             f"Epoch {epoch:02}: {time.perf_counter() - t0:.2f} sec ..."
             f"\nAveraged train loss: {train_losses[epoch]:.4f}"
-            f"\tTrain accuracy: {1e2 * train_accs[epoch]:.2f}%"
+            f"\tTrain accuracy: {1e2 * train_accs[epoch]:.2f} %"
             f"\nAveraged val loss: {val_losses[epoch]:.4f}"
             f"\tVal accuracy: {1e2 * val_accs[epoch]:.2f} %\n"
         )
