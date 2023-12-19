@@ -11,11 +11,13 @@ import torch.optim as optim
 from functions import (
     check_accuracy,
     count_parameters,
+    end_timer_and_print,
     load_checkpoint,
     produce_acc_plot,
     produce_and_print_confusion_matrix,
     produce_loss_plot,
     save_checkpoint,
+    start_timer,
 )
 from LSTM_model import LSTM
 from torch.utils.data import DataLoader, random_split
@@ -115,7 +117,7 @@ if __name__ == "__main__":
         )
 
     # Train CNN:
-    start_time = time.perf_counter()
+    start_timer()
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
@@ -224,10 +226,7 @@ if __name__ == "__main__":
             f"\tVal accuracy: {1e2 * val_accs[epoch]:.2f} %\n"
         )
         model.train()
-    print(
-        f"\nTraining {args.num_epochs} epoch(s) took "
-        f"{(time.perf_counter() - start_time):.2f} seconds"
-    )
+    end_timer_and_print(local_msg=f"Training {args.num_epochs} epoch(s)")
 
     # Save one checkpoint at the end of training:
     save_checkpoint(

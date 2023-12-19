@@ -1,5 +1,7 @@
+import gc
 import os
 from datetime import datetime
+from time import perf_counter
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -9,6 +11,33 @@ import torch.nn as nn
 from prettytable import PrettyTable
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+# Timing utilities
+start_time = None
+
+
+def start_timer() -> None:
+    """Start the timer."""
+    global start_time
+
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_max_memory_allocated()
+    torch.cuda.synchronize()
+
+    start_time = perf_counter()
+
+
+def end_timer_and_print(local_msg):
+    torch.cuda.synchronize()
+    end_time = perf_counter()
+    print()
+    print(
+        f"{local_msg}\n\tTotal execution time = {end_time - start_time:.3f}"
+        f" sec\n\tMax memory used by tensors = "
+        f"{torch.cuda.max_memory_allocated() / 1024**2:.3f} [MB]"
+    )
 
 
 def load_checkpoint(model, optimizer, checkpoint):
