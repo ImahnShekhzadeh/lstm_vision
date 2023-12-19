@@ -117,7 +117,7 @@ if __name__ == "__main__":
         )
 
     # Train CNN:
-    start_timer()
+    start_timer(device=device)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
@@ -226,7 +226,9 @@ if __name__ == "__main__":
             f"\tVal accuracy: {1e2 * val_accs[epoch]:.2f} %\n"
         )
         model.train()
-    end_timer_and_print(local_msg=f"Training {args.num_epochs} epoch(s)")
+    end_timer_and_print(
+        device=device, local_msg=f"Training {args.num_epochs} epoch(s)"
+    )
 
     # Save one checkpoint at the end of training:
     save_checkpoint(

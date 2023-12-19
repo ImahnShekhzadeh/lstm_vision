@@ -17,27 +17,44 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 start_time = None
 
 
-def start_timer() -> None:
+def start_timer(device: torch.device) -> None:
     """Start the timer."""
     global start_time
 
     gc.collect()
-    torch.cuda.empty_cache()
-    torch.cuda.reset_max_memory_allocated()
-    torch.cuda.synchronize()
+
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+        torch.cuda.reset_max_memory_allocated()
+        torch.cuda.synchronize()
 
     start_time = perf_counter()
 
 
-def end_timer_and_print(local_msg):
-    torch.cuda.synchronize()
+def end_timer_and_print(device: torch.device, local_msg: str) -> None:
+    """
+    End the timer and print the time it took to execute the code.
+
+    Args:
+        device (torch.device): Device on which the code was executed.
+        local_msg (str): Local message to print.
+
+    Returns:
+        None
+    """
+    if device.type == "cuda":
+        torch.cuda.synchronize()
     end_time = perf_counter()
-    print()
-    print(
-        f"{local_msg}\n\tTotal execution time = {end_time - start_time:.3f}"
-        f" sec\n\tMax memory used by tensors = "
-        f"{torch.cuda.max_memory_allocated() / 1024**2:.3f} [MB]"
+    msg = (
+        f"{local_msg}\n\tTotal execution time = {end_time - start_time:.3f} "
+        f"[sec]"
     )
+    if device.type == "cuda":
+        msg += (
+            f"\n\tMax memory used by tensors = "
+            f"{torch.cuda.max_memory_allocated() / 1024**2:.3f} [MB]"
+        )
+    print(msg)
 
 
 def load_checkpoint(model, optimizer, checkpoint):
