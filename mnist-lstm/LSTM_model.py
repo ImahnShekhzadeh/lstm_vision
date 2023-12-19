@@ -8,8 +8,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ## CREATE AN LSTM:
 class LSTM(nn.Module):
-    """This class creates an NN for the MNIST dataset. The MNIST dataset has the shape (batch_size, 1, 28, 28)
-    when loading it, and we can interpret this shape as 28 sequences, each with 28 features.
+    """
+    This class creates an NN for the MNIST dataset. The MNIST dataset has
+    the shape `(batch_size, 1, 28, 28)`.
+    when loading it, and we can interpret this shape as 28 sequences, each with
+    28 features.
     """
 
     def __init__(
@@ -22,13 +25,16 @@ class LSTM(nn.Module):
         bidirectional,
     ):
         """
-        Parameters:
-            input_size (int):           In the shape (batch_size, 1, height, width), <height> corresponds to the input size.
-            num_layers (int):           Number of hidden layers for the NN.
-            hidden_size (int):          Number of features in the hidden state h.
-            num_classes (int):          Number of classes our LSTM is supposed to predict, 10 for MNIST.
-            sequence_length (int):      Input is of shape (batch_size, sequence_length, input_size).
-            bidirectional (boolean):    If <True>, use bidirectional LSTM.
+        Args:
+            input_size: input is assumed to be in shape `(N, 1, H, H)`,
+                where `H` is the input size
+            num_layers: number of hidden layers for the NN
+            hidden_size: number of features in hidden state `h`
+            num_classes: number of classes our LSTM is supposed to predict,
+                `10` for MNIST
+            sequence_length: input is of shape
+                `(N, sequence_length, input_size)`
+            bidirectional: if `True`, use bidirectional LSTM
         """
         super(LSTM, self).__init__()
         self.input_size = input_size

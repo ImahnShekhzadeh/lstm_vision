@@ -20,6 +20,8 @@ from functions import (
     start_timer,
 )
 from LSTM_model import LSTM
+from torch import autocast
+from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader, random_split
 from torchinfo import summary
 from torchvision import datasets, transforms
@@ -121,6 +123,8 @@ if __name__ == "__main__":
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
+    scaler = GradScaler()
+
     for epoch in range(args.num_epochs):
         t0 = time.perf_counter()
 
@@ -128,10 +132,9 @@ if __name__ == "__main__":
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
-            images = images.squeeze_(dim=1).to(device)  # ``(N, 1, 28, 28)``
+            output = model(images.squeeze_(dim=1).to(device))  # ``(N, 10)``
             labels = labels.to(device)
-            batch_size = images.shape[0]
-            output = model(images)
+            batch_size = output.shape[0]
 
             # calculate accuracy:
             with torch.no_grad():
