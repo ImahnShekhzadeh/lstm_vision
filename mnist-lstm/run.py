@@ -123,7 +123,7 @@ if __name__ == "__main__":
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
-    scaler = GradScaler()
+    scaler = GradScaler(enabled=args.use_amp)
 
     for epoch in range(args.num_epochs):
         t0 = time.perf_counter()
@@ -132,21 +132,29 @@ if __name__ == "__main__":
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
-            output = model(images.squeeze_(dim=1).to(device))  # ``(N, 10)``
-            labels = labels.to(device)
-            batch_size = output.shape[0]
+            model.train()
+            optimizer.zero_grad()
 
-            # calculate accuracy:
+            with autocast(
+                device_type=device.type,
+                dtype=torch.float16,
+                enabled=args.use_amp,
+            ):
+                output = model(images.squeeze_(dim=1))  # `(N, 10)`
+                loss = cce_mean(output, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad()
+
             with torch.no_grad():
+                # calculate accuracy:
                 model.eval()
+                batch_size = output.shape[0]
                 output_maxima, max_indices = output.max(dim=1, keepdim=False)
                 num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
-
-            model.train()
-            optimizer.zero_grad()
-            cce_mean(output, labels).backward()
-            optimizer.step()
 
             trainingLoss_perEpoch.append(cce_sum(output, labels).item())
 
