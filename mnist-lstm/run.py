@@ -133,6 +133,8 @@ if __name__ == "__main__":
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
+            labels = labels.to(device)
+
             model.train()
             optimizer.zero_grad()
 
@@ -141,7 +143,7 @@ if __name__ == "__main__":
                 dtype=torch.float16,
                 enabled=args.use_amp,
             ):
-                output = model(images.squeeze_(dim=1))  # `(N, 10)`
+                output = model(images.squeeze_(dim=1).to(device))  # `(N, 10)`
                 loss = cce_mean(output, labels)
 
             scaler.scale(loss).backward()
@@ -149,15 +151,15 @@ if __name__ == "__main__":
             scaler.update()
             optimizer.zero_grad()
 
+            trainingLoss_perEpoch.append(cce_sum(output, labels).item())
+
+            # calculate accuracy
             with torch.no_grad():
-                # calculate accuracy:
                 model.eval()
                 batch_size = output.shape[0]
                 output_maxima, max_indices = output.max(dim=1, keepdim=False)
                 num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
-
-            trainingLoss_perEpoch.append(cce_sum(output, labels).item())
 
             if batch_idx % 10 == 0:
                 prog_perc = (
