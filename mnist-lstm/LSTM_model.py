@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn  # All neural network modules, nn.Linear, nn.Conv2D, nn.InstanceNorm2d, loss functions etc.
 import torch.nn.functional as F  # ReLU activation function, etc.
 
-# Set device:
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 ## CREATE AN LSTM:
 class LSTM(nn.Module):
@@ -23,6 +20,7 @@ class LSTM(nn.Module):
         num_classes,
         sequence_length,
         bidirectional,
+        device,
     ):
         """
         Args:
@@ -35,6 +33,7 @@ class LSTM(nn.Module):
             sequence_length: input is of shape
                 `(N, sequence_length, input_size)`
             bidirectional: if `True`, use bidirectional LSTM
+            device: `cuda` or `cpu`
         """
         super(LSTM, self).__init__()
         self.input_size = input_size
@@ -43,6 +42,7 @@ class LSTM(nn.Module):
         self.num_classes = num_classes
         self.sequence_length = sequence_length
         self.bidirectional = bidirectional
+        self.device = device
 
         if self.bidirectional == True:
             self.num_directions = 2
@@ -67,13 +67,21 @@ class LSTM(nn.Module):
 
     def forward(self, x):
         """Standard forward pass."""
+
         # Initialize hidden state:
         h0 = torch.zeros(
-            self.num_layers * self.num_directions, x.size(0), self.hidden_size
-        ).to(device)
+            self.num_layers * self.num_directions,
+            x.size(0),
+            self.hidden_size,
+            device=self.device,
+        )
         c0 = torch.zeros(
-            self.num_layers * self.num_directions, x.size(0), self.hidden_size
-        ).to(device)
+            self.num_layers * self.num_directions,
+            x.size(0),
+            self.hidden_size,
+            device=self.device,
+        )
+
         # Forward prop:
         out, (hidden_state, cell_state) = self.LSTM(x, (h0, c0))
         out = self.dropout(out)

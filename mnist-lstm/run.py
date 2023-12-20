@@ -93,6 +93,7 @@ if __name__ == "__main__":
         num_classes=len(full_train_dataset.classes),
         sequence_length=args.sequence_length,
         bidirectional=args.bidirectional,
+        device=device,
     ).to(device)
     print(
         summary(
