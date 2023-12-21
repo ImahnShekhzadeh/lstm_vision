@@ -13,6 +13,7 @@ from functions import (
     count_parameters,
     end_timer_and_print,
     load_checkpoint,
+    print__batch_info,
     produce_acc_plot,
     produce_and_print_confusion_matrix,
     produce_loss_plot,
@@ -80,12 +81,11 @@ if __name__ == "__main__":
     )
 
     print(
-        f"We have {len(train_subset)}, {len(val_subset)}, "
-        f"{len(test_dataset)} MNIST numbers to train, validate and test our "
-        "LSTM with."
+        f"We have {len(train_subset)}, {len(val_subset)}, {len(test_dataset)} "
+        "MNIST numbers to train, validate and test our LSTM with."
     )
 
-    # Print model summary:
+    # print model summary
     model = LSTM(
         input_size=args.input_size,
         num_layers=args.num_layers,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             torch.load("CNN-lr-0.0001-batch-size-64-20-06-2021-15:07.pth.tar")
         )
 
-    # Train CNN:
+    # Train the network:
     start_timer(device=device)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
@@ -154,16 +154,14 @@ if __name__ == "__main__":
                 num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
 
-            if batch_idx % 10 == 0:
-                prog_perc = (
-                    100 * batch_idx * batch_size / len(train_loader.dataset)
-                )
-                print(
-                    f"Train epoch: {epoch} [{batch_idx * batch_size:05d} / "
-                    f"{len(train_loader.dataset)} ({prog_perc:05.2f} %)] "
-                    f"\tTrain loss: {cce_mean(output, labels).item():.4f}"
-                    f"\tRuntime: {(time.perf_counter() - t0):.3f} s"
-                )
+            print__batch_info(
+                batch_idx=batch_idx,
+                loader=train_loader,
+                epoch=epoch,
+                t_0=t0,
+                loss=loss,
+                mode="train",
+            )
 
         # validation stuff:
         with torch.no_grad():
@@ -204,21 +202,14 @@ if __name__ == "__main__":
                         "optimizer": deepcopy(optimizer.state_dict()),
                     }
 
-                if (val_batch_idx % 5) == 0:
-                    prog_perc = (
-                        100
-                        * val_batch_idx
-                        * batch_size
-                        / len(val_loader.dataset)
-                    )
-                    print(
-                        f"Val epoch: {epoch} "
-                        f"[{val_batch_idx * batch_size:05d} / "
-                        f"{len(val_loader.dataset)} ({prog_perc:05.2f} %)]"
-                        f"\t\tVal loss: "
-                        f"{cce_mean(val_output, val_labels).item():.4f}\t"
-                        f"Runtime: {(time.perf_counter() - t0):.3f} s"
-                    )
+                print__batch_info(
+                    batch_idx=val_batch_idx,
+                    loader=val_loader,
+                    epoch=epoch,
+                    t_0=t0,
+                    loss=cce_mean(val_output, val_labels).cpu().item(),
+                    mode="val",
+                )
 
         train_losses.append(
             np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)

@@ -7,8 +7,9 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import torch
-import torch.nn as nn
 from prettytable import PrettyTable
+from torch import Tensor, nn
+from torch.utils.data import DataLoader
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -57,6 +58,41 @@ def end_timer_and_print(device: torch.device, local_msg: str) -> None:
     print(msg)
 
 
+def print__batch_info(
+    batch_idx: int,
+    loader: DataLoader,
+    epoch: int,
+    t_0: float,
+    loss: Tensor,
+    mode: str,
+    frequency: int = 1,
+):
+    assert mode.lower() in ["train", "val"]
+    assert type(frequency) == int
+
+    if batch_idx % frequency == 0:
+        print_statement = f"{mode.capitalize()} epoch: {epoch} "
+
+        if batch_idx == len(loader) - 1:
+            print_statement += (
+                f"[{len(loader.dataset)} / {len(loader.dataset)} (100 %)] "
+            )
+        else:
+            prog_perc = (
+                100 * (batch_idx + 1) * loader.batch_size / len(loader.dataset)
+            )
+            print_statement += (
+                f"[{(batch_idx + 1) * loader.batch_size} / "
+                f"{len(loader.dataset)} ({prog_perc:.2f} %)] "
+            )
+
+        print_statement += (
+            f"\t{mode.capitalize()} loss: {loss:.4f}"
+            f"\tRuntime: {(perf_counter() - t_0):.3f} s"
+        )
+        print(print_statement)
+
+
 def load_checkpoint(model, optimizer, checkpoint):
     """Load an existing checkpoint of the model to continue training.
 
@@ -97,7 +133,6 @@ def count_parameters(model):
         table.add_row([name, param])
         total_params += param
     print(table)
-    print(f"Total Trainable Params: {total_params}")
     return total_params
 
 
@@ -233,7 +268,7 @@ def produce_and_print_confusion_matrix(
             total_sums += element
         confusion_matrix[i] /= total_sums
 
-    print("Confusion matrix:", confusion_matrix)
+    print(f"\nConfusion matrix:\n\n{confusion_matrix}")
 
     # Convert PyTorch tensor to numpy array:
     fig = plt.figure()
