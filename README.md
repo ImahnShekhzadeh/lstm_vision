@@ -52,6 +52,7 @@ Train data: Got 48974/50000 with accuracy 97.95 %
 Test data: Got 9764/10000 with accuracy 97.64 %
 ```
 On an NVIDIA RTX 4090, training for `10` epochs takes about `93` s, and in total about `1.7` GB of memory is required.
+
 With the flag `--use_amp`, training for `10` epochs takes about `88` s, i.e. there is not a huge performance gain, 
 but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
 accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
