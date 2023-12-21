@@ -95,11 +95,7 @@ if __name__ == "__main__":
         bidirectional=args.bidirectional,
         device=device,
     ).to(device)
-    print(
-        summary(
-            model, (args.batch_size, args.sequence_length, args.input_size)
-        )
-    )
+    summary(model, (args.batch_size, args.sequence_length, args.input_size))
 
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
@@ -234,11 +230,10 @@ if __name__ == "__main__":
         train_accs.append(num_correct / num_samples)
         val_accs.append(val_num_correct / val_num_samples)
         print(
-            f"Epoch {epoch:02}: {time.perf_counter() - t0:.2f} sec ..."
-            f"\nAveraged train loss: {train_losses[epoch]:.4f}"
-            f"\tTrain acc: {1e2 * train_accs[epoch]:.2f} %"
-            f"\nAveraged val loss: {val_losses[epoch]:.4f}"
-            f"\tVal acc: {1e2 * val_accs[epoch]:.2f} %\n"
+            f"\nEpoch {epoch}: {time.perf_counter() - t0:.3f} [sec]\t"
+            f"Mean train/val loss: {train_losses[epoch]:.4f}/"
+            f"{val_losses[epoch]:.4f}\tTrain/val acc: "
+            f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
         )
         model.train()
     end_timer_and_print(
