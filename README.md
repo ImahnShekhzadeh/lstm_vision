@@ -30,6 +30,7 @@ options:
                         Number of batches that are used for one ADAM update rule.
   --load_cp             Whether to load preexisting checkpoint(s) of the model.
   --bidirectional       Whether to use bidirectional LSTM (True) or not (False). Default: True.
+  --use_amp             Whether to use automatic mixed precision (AMP) or not.
 ```
 
 ## Run
@@ -41,6 +42,8 @@ docker run --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --g
 ```
 where I assume that the `MNIST` folder already exists locally. If not, please download it manually first.
 
+The options I used are under `run_scripts.sh`.
+
 ## Results
 
 Training a bidirectional LSTM for `10` epochs results in,
@@ -48,4 +51,8 @@ Training a bidirectional LSTM for `10` epochs results in,
 Train data: Got 48974/50000 with accuracy 97.95 %
 Test data: Got 9764/10000 with accuracy 97.64 %
 ```
-On an NVIDIA RTX 4090, training for `10` epochs takes about `101` s, and in total about `1.7` GB of memory is required.
+On an NVIDIA RTX 4090, training for `10` epochs takes about `93` s, and in total about `1.7` GB of memory is required.
+With the flag `--use_amp`, training for `10` epochs takes about `88` s, i.e. there is not a huge performance gain, 
+but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
+accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
+casting to `torch.float16` enabled!

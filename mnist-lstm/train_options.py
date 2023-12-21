@@ -78,11 +78,11 @@ class TrainOptions:
         parser.add_argument(
             "--bidirectional",
             action="store_true",
-            help="Whether to use bidirectional LSTM (True) or not (False). Default: True.",
+            help="Whether to use bidirectional LSTM.",
         )
         parser.add_argument(
             "--use_amp",
             action="store_true",
-            help="Whether to use automatic mixed precision (AMP) or not.",
+            help="Whether to use automatic mixed precision (AMP).",
         )
         self.args = parser.parse_args()
