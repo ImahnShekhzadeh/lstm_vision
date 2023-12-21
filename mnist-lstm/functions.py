@@ -79,7 +79,7 @@ def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
         filename (pth.tar)      -- The name of the checkpoint.
     """
     torch.save(state, filename)
-    print("=> Saving checkpoint")
+    print("\n=> Saving checkpoint")
 
 
 def count_parameters(model):

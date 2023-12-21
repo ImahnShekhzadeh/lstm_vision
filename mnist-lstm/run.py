@@ -128,14 +128,12 @@ if __name__ == "__main__":
 
     for epoch in range(args.num_epochs):
         t0 = time.perf_counter()
-
         trainingLoss_perEpoch, valLoss_perEpoch = [], []
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
-            labels = labels.to(device)
-
             model.train()
+            labels = labels.to(device)
             optimizer.zero_grad()
 
             with autocast(
@@ -149,9 +147,8 @@ if __name__ == "__main__":
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-            optimizer.zero_grad()
 
-            trainingLoss_perEpoch.append(cce_sum(output, labels).item())
+            trainingLoss_perEpoch.append(cce_sum(output, labels).cpu().item())
 
             # calculate accuracy
             with torch.no_grad():
@@ -169,32 +166,40 @@ if __name__ == "__main__":
                     f"Train epoch: {epoch} [{batch_idx * batch_size:05d} / "
                     f"{len(train_loader.dataset)} ({prog_perc:05.2f} %)] "
                     f"\tTrain loss: {cce_mean(output, labels).item():.4f}"
-                    f"\tElapsed time: {(time.perf_counter() - t0):05.2f} s"
+                    f"\tRuntime: {(time.perf_counter() - t0):.3f} s"
                 )
 
-        # Validation stuff:
+        # validation stuff:
         with torch.no_grad():
             model.eval()
+
             for val_batch_idx, (val_images, val_labels) in enumerate(
                 val_loader
             ):
-                val_images = val_images.squeeze_(dim=1).to(device)
                 val_labels = val_labels.to(device)
-                batch_size = val_images.shape[0]
-                val_output = model(val_images)  # ``[batch_size, C]``
-                val_loss = cce_sum(val_output, val_labels).item()
-                # TODO: is `val_loss` in on CPU or GPU?
 
-                # Calculate accuracy:
+                with autocast(
+                    device_type=device.type,
+                    dtype=torch.float16,
+                    enabled=args.use_amp,
+                ):
+                    val_output = model(
+                        val_images.squeeze_(dim=1).to(device)
+                    )  # `[N, C]`
+                    val_loss = cce_sum(val_output, val_labels).cpu().item()
+
+                valLoss_perEpoch.append(val_loss)
+
+                # calculate accuracy
+                # TODO: write a `calculate_accuracy()` function
                 val_output_maxima, val_max_indices = val_output.max(
                     dim=1, keepdim=False
                 )
                 val_num_correct += (
-                    (val_max_indices == val_labels).sum().cpu().item()
+                    (val_max_indices == val_labels).cpu().sum().item()
                 )
+                batch_size = val_output.shape[0]
                 val_num_samples += batch_size
-
-                valLoss_perEpoch.append(val_loss)
 
                 if val_loss < min_val_loss:
                     min_val_loss = val_loss
@@ -216,8 +221,7 @@ if __name__ == "__main__":
                         f"{len(val_loader.dataset)} ({prog_perc:05.2f} %)]"
                         f"\t\tVal loss: "
                         f"{cce_mean(val_output, val_labels).item():.4f}\t"
-                        f"Elapsed time: "
-                        f"{(time.perf_counter() - t0):05.2f} s"
+                        f"Runtime: {(time.perf_counter() - t0):.3f} s"
                     )
 
         train_losses.append(
@@ -232,9 +236,9 @@ if __name__ == "__main__":
         print(
             f"Epoch {epoch:02}: {time.perf_counter() - t0:.2f} sec ..."
             f"\nAveraged train loss: {train_losses[epoch]:.4f}"
-            f"\tTrain accuracy: {1e2 * train_accs[epoch]:.2f} %"
+            f"\tTrain acc: {1e2 * train_accs[epoch]:.2f} %"
             f"\nAveraged val loss: {val_losses[epoch]:.4f}"
-            f"\tVal accuracy: {1e2 * val_accs[epoch]:.2f} %\n"
+            f"\tVal acc: {1e2 * val_accs[epoch]:.2f} %\n"
         )
         model.train()
     end_timer_and_print(
