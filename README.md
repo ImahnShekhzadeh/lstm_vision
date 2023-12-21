@@ -40,7 +40,7 @@ I ran the script `run.py` as follows:
 docker build -f Dockerfile -t mnist-lstm:1.0.0 .
 docker run --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.0.0
 ```
-where I assume that the `MNIST` folder already exists locally. If not, please download it manually first.
+where I assume that the `MNIST` folder already exists locally. If not, please download it manually first by extracting [`mnist.zip`](mnist.zip).
 
 The options I used are under `run_scripts.sh`.
 
