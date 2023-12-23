@@ -58,39 +58,79 @@ def end_timer_and_print(device: torch.device, local_msg: str) -> None:
     print(msg)
 
 
+def format_line(
+    mode: str,
+    epoch: int,
+    current_samples: int,
+    total_samples: int,
+    percentage: float,
+    loss: Tensor,
+    runtime: float,
+) -> None:
+    assert mode.lower() in ["train", "val"]
+
+    # calculate maximum width for each part
+    max_epoch_width = len(f"{mode.capitalize()} epoch: {epoch}")
+    max_sample_info_width = len(f"[{total_samples} / {total_samples} (100 %)]")
+
+    # format each part
+    epoch_str = f"{mode.capitalize()} epoch: {epoch}".ljust(max_epoch_width)
+    padded__current_sample = str(current_samples).zfill(
+        len(str(total_samples))
+    )
+    sample_info_str = f"[{padded__current_sample} / {total_samples} ({percentage:05.2f} %)]".ljust(
+        max_sample_info_width
+    )
+    loss_str = f"{mode.capitalize()} loss: {loss:.4f}"
+    runtime_str = f"Runtime: {runtime:.3f} s"
+
+    return f"{epoch_str}  {sample_info_str}  {loss_str}  {runtime_str}"
+
+
 def print__batch_info(
+    mode: str,
     batch_idx: int,
     loader: DataLoader,
     epoch: int,
     t_0: float,
     loss: Tensor,
-    mode: str,
     frequency: int = 1,
-):
+) -> None:
+    """
+    Print the current batch information.
+
+    Params:
+        mode: Mode in which the model is in. Either "train" or "val".
+        batch_idx: Batch index.
+        loader: Train or validation Dataloader.
+        epoch: Current epoch.
+        t_0: Time at which the training started.
+        loss: Loss of the current batch.
+        frequency: Frequency at which to print the batch info.
+    """
     assert mode.lower() in ["train", "val"]
     assert type(frequency) == int
 
     if batch_idx % frequency == 0:
-        print_statement = f"{mode.capitalize()} epoch: {epoch} "
-
         if batch_idx == len(loader) - 1:
-            print_statement += (
-                f"[{len(loader.dataset)} / {len(loader.dataset)} (100 %)] "
-            )
+            current_samples = len(loader.dataset)
         else:
-            prog_perc = (
-                100 * (batch_idx + 1) * loader.batch_size / len(loader.dataset)
-            )
-            print_statement += (
-                f"[{(batch_idx + 1) * loader.batch_size} / "
-                f"{len(loader.dataset)} ({prog_perc:.2f} %)] "
-            )
+            current_samples = (batch_idx + 1) * loader.batch_size
 
-        print_statement += (
-            f"\t{mode.capitalize()} loss: {loss:.4f}"
-            f"\tRuntime: {(perf_counter() - t_0):.3f} s"
+        total_samples = len(loader.dataset)
+        prog_perc = 100 * current_samples / total_samples
+        runtime = perf_counter() - t_0
+
+        formatted_line = format_line(
+            mode=mode,
+            epoch=epoch,
+            current_samples=current_samples,
+            total_samples=total_samples,
+            percentage=prog_perc,
+            loss=loss,
+            runtime=runtime,
         )
-        print(print_statement)
+        print(f"{formatted_line}")
 
 
 def load_checkpoint(model, optimizer, checkpoint):

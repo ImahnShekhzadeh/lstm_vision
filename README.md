@@ -60,5 +60,4 @@ casting to `torch.float16` enabled!
 
 ## TODO's
 
-[ ] Make spacing in output more consistent
 [ ] Put output into a TeX file so the math is displayed more beautifully
