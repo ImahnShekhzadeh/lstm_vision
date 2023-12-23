@@ -161,6 +161,7 @@ if __name__ == "__main__":
                 t_0=t0,
                 loss=loss,
                 mode="train",
+                frequency=args.freq_output__train,
             )
 
         # validation stuff:
@@ -209,6 +210,7 @@ if __name__ == "__main__":
                     t_0=t0,
                     loss=cce_mean(val_output, val_labels).cpu().item(),
                     mode="val",
+                    frequency=args.freq_output__val,
                 )
 
         train_losses.append(

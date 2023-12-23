@@ -8,6 +8,10 @@ The main script `run.py` can be run with different options,
 ```
 options:
   -h, --help            show this help message and exit
+  --freq_output__train FREQ_OUTPUT__TRAIN
+                        Frequency of outputting the training loss and accuracy.
+  --freq_output__val FREQ_OUTPUT__VAL
+                        Frequency of outputting the validation loss and accuracy.
   --saving_path SAVING_PATH
                         Saving path for the files (loss plot, accuracy plot, etc.)
   --seed_number SEED_NUMBER
@@ -29,8 +33,8 @@ options:
   --batch_size BATCH_SIZE
                         Number of batches that are used for one ADAM update rule.
   --load_cp             Whether to load preexisting checkpoint(s) of the model.
-  --bidirectional       Whether to use bidirectional LSTM (True) or not (False). Default: True.
-  --use_amp             Whether to use automatic mixed precision (AMP) or not.
+  --bidirectional       Whether to use bidirectional LSTM.
+  --use_amp             Whether to use automatic mixed precision (AMP).
 ```
 
 ## Run
@@ -57,7 +61,3 @@ With the flag `--use_amp`, training for `10` epochs takes about `88` s on the sa
 but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
 accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
 casting to `torch.float16` enabled!
-
-## TODO's
-
-[ ] Put output into a TeX file so the math is displayed more beautifully

@@ -11,6 +11,18 @@ class TrainOptions:
             description="Hyperparameters and parameters"
         )
         parser.add_argument(
+            "--freq_output__train",
+            type=int,
+            default=1,
+            help="Frequency of outputting the training loss and accuracy.",
+        )
+        parser.add_argument(
+            "--freq_output__val",
+            type=int,
+            default=1,
+            help="Frequency of outputting the validation loss and accuracy.",
+        )
+        parser.add_argument(
             "--saving_path",
             type=str,
             default="",
