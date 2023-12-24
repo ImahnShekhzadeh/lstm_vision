@@ -23,6 +23,17 @@ class TrainOptions:
             help="Frequency of outputting the validation loss and accuracy.",
         )
         parser.add_argument(
+            "--num_workers",
+            type=int,
+            default=0,
+            help="Number of subprocesses used in the dataloaders.",
+        )
+        parser.add_argument(
+            "--pin_memory",
+            action="store_true",
+            help="Whether tensors are copied into CUDA pinned memory.",
+        )
+        parser.add_argument(
             "--saving_path",
             type=str,
             default="",

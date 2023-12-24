@@ -30,6 +30,13 @@ from train_options import TrainOptions
 
 if __name__ == "__main__":
     args = TrainOptions().args
+
+    if args.pin_memory:
+        assert args.num_workers > 0, (
+            "With pinned memory, ``num_workers > 0`` should be chosen, cf. "
+            "https://stackoverflow.com/questions/55563376/pytorch-how"
+            "-does-pin-memory-work-in-dataloader"
+        )
     print(args)
 
     if args.seed_number is not None:
@@ -64,10 +71,18 @@ if __name__ == "__main__":
         dataset=full_train_dataset, lengths=[50000, 10000]
     )
     train_loader = DataLoader(
-        dataset=train_subset, shuffle=True, batch_size=args.batch_size
+        dataset=train_subset, 
+        batch_size=args.batch_size,
+        shuffle=True, 
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
     )
     val_loader = DataLoader(
-        dataset=val_subset, shuffle=True, batch_size=args.batch_size
+        dataset=val_subset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
     )
     test_dataset = datasets.MNIST(
         root="",
@@ -77,7 +92,11 @@ if __name__ == "__main__":
         download=True,
     )
     test_loader = DataLoader(
-        dataset=test_dataset, batch_size=args.batch_size, shuffle=True
+        dataset=test_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
     )
 
     print(
@@ -232,13 +251,11 @@ if __name__ == "__main__":
     end_timer_and_print(
         device=device, local_msg=f"Training {args.num_epochs} epoch(s)"
     )
-
-    # save checkpoint
     save_checkpoint(
         state=checkpoint,
         filename=os.path.join(
             args.saving_path,
-            f"CNN-{args.learning_rate}-{args.batch_size}-"
+            f"lstm_cp_{args.learning_rate}_{args.batch_size}-"
             f"{datetime.now().strftime('%dp%mp%Y_%H:%M')}.pt",
         ),
     )
