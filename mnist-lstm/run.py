@@ -69,21 +69,6 @@ def main() -> None:
             num__train_samples, len(full_train_dataset) - num__train_samples
         ]
     )
-    
-    train_loader = DataLoader(
-        dataset=train_subset, 
-        batch_size=args.batch_size,
-        shuffle=True, 
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-    )
-    val_loader = DataLoader(
-        dataset=val_subset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
-    )
     test_dataset = datasets.MNIST(
         root="",
         train=False,
@@ -91,12 +76,24 @@ def main() -> None:
         target_transform=None,
         download=True,
     )
+    
+    loader_kwargs = {
+        "batch_size": args.batch_size,
+        "shuffle": True,
+        "num_workers": args.num_workers,
+        "pin_memory": args.pin_memory,
+    }
+    train_loader = DataLoader(
+        dataset=train_subset, 
+        **loader_kwargs,
+    )
+    val_loader = DataLoader(
+        dataset=val_subset,
+        **loader_kwargs,
+    )
     test_loader = DataLoader(
         dataset=test_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_memory,
+        **loader_kwargs,
     )
 
     print(
