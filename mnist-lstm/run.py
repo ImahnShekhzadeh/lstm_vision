@@ -28,7 +28,9 @@ from torchinfo import summary
 from torchvision import datasets, transforms
 from train_options import TrainOptions
 
-if __name__ == "__main__":
+
+def main() -> None: 
+    """Main function."""
     args = TrainOptions().args
 
     if args.pin_memory:
@@ -37,6 +39,10 @@ if __name__ == "__main__":
             "https://stackoverflow.com/questions/55563376/pytorch-how"
             "-does-pin-memory-work-in-dataloader"
         )
+    assert 0 < args.dropout_rate < 1, (
+        "``dropout_rate`` should be chosen between 0 and 1, "
+        f"but is {args.dropout_rate}."
+    )
     assert 0 < args.train_split < 1, (
         "``train_split`` should be chosen between 0 and 1, "
         f"but is {args.train_split}."
@@ -288,3 +294,7 @@ if __name__ == "__main__":
     confusion_matrix = produce_and_print_confusion_matrix(
         len(full_train_dataset.classes), test_loader, model, args.saving_path
     )
+
+    
+if __name__ == "__main__":
+    main()
