@@ -24,8 +24,8 @@ class LSTM(nn.Module):
     ):
         """
         Args:
-            input_size: input is assumed to be in shape `(N, 1, H, H)`,
-                where `H` is the input size
+            input_size: input is assumed to be in shape `(N, 1, H, W)`,
+                where `W` is the input size
             num_layers: number of hidden layers for the NN
             hidden_size: number of features in hidden state `h`
             num_classes: number of classes our LSTM is supposed to predict,

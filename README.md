@@ -63,4 +63,7 @@ accuracy on the test data is about `97.63 %`, i.e. the performance basically rem
 casting to `torch.float16` enabled!
 
 ## TODO
+[ ] Write github action workflow for `isort` & `black` and pin the versions.
+[ ] Make `Dropout` rate passable.
+[ ] Don't make the sequence length (`sequence_length`) passable via flag, instead take from data.
 [ ] Rerun new commits on RTX 4090 in docker container.

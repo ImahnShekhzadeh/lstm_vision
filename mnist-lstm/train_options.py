@@ -46,18 +46,6 @@ class TrainOptions:
             help="If specified, seed number is used for RNG.",
         )
         parser.add_argument(
-            "--sequence_length",
-            type=int,
-            default=28,
-            help="Sequence length for the RNN, input: (batch_size, sequence_length, input_size)",
-        )
-        parser.add_argument(
-            "--input_size",
-            type=int,
-            default=28,
-            help="Input size for the RNN, input: (batch_size, sequence_length, input_size)",
-        )
-        parser.add_argument(
             "--hidden_size",
             type=int,
             default=256,

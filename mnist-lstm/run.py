@@ -54,7 +54,6 @@ if __name__ == "__main__":
     # Transform and load the data:
     trafo = transforms.Compose(
         [
-            transforms.Resize(size=(args.input_size, args.input_size)),
             transforms.ToTensor(),
             transforms.Normalize(
                 mean=[0.5 for _ in range(args.channels_img)],
@@ -112,18 +111,28 @@ if __name__ == "__main__":
         "MNIST numbers to train, validate and test our LSTM with."
     )
 
+    # define sequence length and input size of LSTM based on input data
+    seq_length = full_train_dataset[0][0].shape[1]
+    inp_size = full_train_dataset[0][0].shape[2]
+
     # print model summary
     model = LSTM(
-        input_size=args.input_size,
+        input_size=inp_size,
         num_layers=args.num_layers,
         hidden_size=args.hidden_size,
         num_classes=len(full_train_dataset.classes),
-        sequence_length=args.sequence_length,
+        sequence_length=seq_length,
         bidirectional=args.bidirectional,
         device=device,
     ).to(device)
-    summary(model, (args.batch_size, args.sequence_length, args.input_size))
-
+    summary(
+        model, 
+        (
+            args.batch_size, 
+            seq_length, 
+            inp_size
+        )
+    )
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
     cce_sum = nn.CrossEntropyLoss(reduction="sum")
