@@ -61,3 +61,6 @@ With the flag `--use_amp`, training for `10` epochs takes about `88` s on the sa
 but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
 accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
 casting to `torch.float16` enabled!
+
+## TODO
+[ ] Rerun new commits on RTX 4090 in docker container.
