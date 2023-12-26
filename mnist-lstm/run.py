@@ -123,6 +123,7 @@ if __name__ == "__main__":
         num_classes=len(full_train_dataset.classes),
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
+        dropout_rate=args.dropout_rate,
         device=device,
     ).to(device)
     summary(

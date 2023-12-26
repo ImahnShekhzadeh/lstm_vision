@@ -3,7 +3,6 @@ import torch.nn as nn  # All neural network modules, nn.Linear, nn.Conv2D, nn.In
 import torch.nn.functional as F  # ReLU activation function, etc.
 
 
-## CREATE AN LSTM:
 class LSTM(nn.Module):
     """
     This class creates an NN for the MNIST dataset. The MNIST dataset has
@@ -20,6 +19,7 @@ class LSTM(nn.Module):
         num_classes,
         sequence_length,
         bidirectional,
+        dropout_rate,
         device,
     ):
         """
@@ -33,6 +33,7 @@ class LSTM(nn.Module):
             sequence_length: input is of shape
                 `(N, sequence_length, input_size)`
             bidirectional: if `True`, use bidirectional LSTM
+            dropout_rate: dropout rate for the dropout layer
             device: `cuda` or `cpu`
         """
         super(LSTM, self).__init__()
@@ -53,11 +54,11 @@ class LSTM(nn.Module):
             input_size=self.input_size,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
-            batch_first=True,  # <batch_first = True> because our first axis is the batch_size
+            batch_first=True,
             dropout=0,
             bidirectional=self.bidirectional,
         )
-        self.dropout = nn.Dropout(p=0.2, inplace=False)
+        self.dropout = nn.Dropout(p=dropout_rate, inplace=True)
         self.fc = nn.Linear(
             in_features=self.num_directions
             * self.hidden_size

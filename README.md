@@ -8,6 +8,8 @@ The main script `run.py` can be run with different options,
 ```
 options:
   -h, --help            show this help message and exit
+  --dropout_rate DROPOUT_RATE
+                        Dropout rate for the dropout layer.
   --freq_output__train FREQ_OUTPUT__TRAIN
                         Frequency of outputting the training loss and accuracy.
   --freq_output__val FREQ_OUTPUT__VAL
@@ -34,6 +36,8 @@ options:
                         Number of batches that are used for one ADAM update rule.
   --load_cp             Whether to load preexisting checkpoint(s) of the model.
   --bidirectional       Whether to use bidirectional LSTM.
+  --train_split TRAIN_SPLIT
+                        Split ratio of train and validation set.
   --use_amp             Whether to use automatic mixed precision (AMP).
 ```
 
@@ -64,6 +68,4 @@ casting to `torch.float16` enabled!
 
 ## TODO
 [ ] Write github action workflow for `isort` & `black` and pin the versions.
-[ ] Make `Dropout` rate passable.
-[ ] Don't make the sequence length (`sequence_length`) passable via flag, instead take from data.
 [ ] Rerun new commits on RTX 4090 in docker container.

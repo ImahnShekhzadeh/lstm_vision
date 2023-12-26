@@ -11,6 +11,12 @@ class TrainOptions:
             description="Hyperparameters and parameters"
         )
         parser.add_argument(
+            "--dropout_rate",
+            type=float,
+            default=0.,
+            help="Dropout rate for the dropout layer.",
+        )
+        parser.add_argument(
             "--freq_output__train",
             type=int,
             default=1,
