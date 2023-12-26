@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from functions import (
+    check_args,
     check_accuracy,
     count_parameters,
     end_timer_and_print,
@@ -33,21 +34,7 @@ def main() -> None:
     """Main function."""
     args = TrainOptions().args
 
-    if args.pin_memory:
-        assert args.num_workers > 0, (
-            "With pinned memory, ``num_workers > 0`` should be chosen, cf. "
-            "https://stackoverflow.com/questions/55563376/pytorch-how"
-            "-does-pin-memory-work-in-dataloader"
-        )
-    assert 0 < args.dropout_rate < 1, (
-        "``dropout_rate`` should be chosen between 0 and 1, "
-        f"but is {args.dropout_rate}."
-    )
-    assert 0 < args.train_split < 1, (
-        "``train_split`` should be chosen between 0 and 1, "
-        f"but is {args.train_split}."
-    )
-    print(args)
+    check_args(args)
 
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
@@ -284,15 +271,16 @@ def main() -> None:
         ),
     )
     count_parameters(model)
-    check_accuracy(train_loader, model, mode="train")
-    check_accuracy(test_loader, model, mode="test")
+    check_accuracy(train_loader, model, mode="train", device=device)
+    check_accuracy(test_loader, model, mode="test", device=device)
 
     produce_loss_plot(
         args.num_epochs, train_losses, val_losses, args.saving_path
     )
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
     confusion_matrix = produce_and_print_confusion_matrix(
-        len(full_train_dataset.classes), test_loader, model, args.saving_path
+        len(full_train_dataset.classes), test_loader, model, args.saving_path,
+        device,
     )
 
     

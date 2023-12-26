@@ -1,5 +1,6 @@
 import gc
 import os
+import argparse
 from datetime import datetime
 from time import perf_counter
 
@@ -11,11 +12,33 @@ from prettytable import PrettyTable
 from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 # Timing utilities
 start_time = None
+
+
+def check_args(args: argparse.Namespace) -> None:
+    """
+    Check provided arguments and print them to CLI.
+
+    Args:
+        args: Arguments provided by the user.
+    """
+    if args.pin_memory:
+        assert args.num_workers > 0, (
+            "With pinned memory, ``num_workers > 0`` should be chosen, cf. "
+            "https://stackoverflow.com/questions/55563376/pytorch-how"
+            "-does-pin-memory-work-in-dataloader"
+        )
+    assert 0 < args.dropout_rate < 1, (
+        "``dropout_rate`` should be chosen between 0 and 1, "
+        f"but is {args.dropout_rate}."
+    )
+    assert 0 < args.train_split < 1, (
+        "``train_split`` should be chosen between 0 and 1, "
+        f"but is {args.train_split}."
+    )
+    print(args)
 
 
 def start_timer(device: torch.device) -> None:
@@ -176,7 +199,7 @@ def count_parameters(model):
     return total_params
 
 
-def check_accuracy(loader, model, mode):
+def check_accuracy(loader, model, mode, device):
     """
     Check the accuracy of a given model on a given dataset.
 
@@ -187,6 +210,8 @@ def check_accuracy(loader, model, mode):
             the total number of parameters.
         mode (str):                                 -- Mode in which the model
             is in. Either "train" or "test".
+        device (torch.device)                       -- Device on which the code
+            was executed.
     """
     assert mode in ["train", "test"]
 
@@ -219,11 +244,12 @@ def produce_loss_plot(num_epochs, train_losses, val_losses, saving_path):
     """Plot the categorical crossentropy (loss) evolving over time.
 
     Params:
-        num_epochs (int)                        -- Number of epochs the model was trained.
+        num_epochs (int)                        -- Number of epochs the model 
+            was trained.
         train_losses (numpy.array)              -- Training losses per epoch.
         val_losses (numpy.array)                -- Validation losses per epoch.
-        learning_rate (float)                   -- Learning rate for the training of the flow.
-        saving_path (str)                       -- Saving path for the loss plot.
+        learning_rate (float)                   -- Learning rate.
+        saving_path (str)                       -- Saving path.
     """
     epochs = np.arange(start=0, stop=num_epochs, step=1)
     fig, ax = plt.subplots()
@@ -275,7 +301,7 @@ def produce_acc_plot(
 
 
 def produce_and_print_confusion_matrix(
-    num_classes, test_loader, model, saving_path
+    num_classes, test_loader, model, saving_path, device,
 ):
     """Produce a confusion matrix based on the test set.
 
@@ -284,6 +310,7 @@ def produce_and_print_confusion_matrix(
         test_loader (torch.utils.data.DataLoader)   -- DataLoader for the test dataset.
         model (torch.nn)                            -- Model that was trained.
         saving_path (str)                           -- Saving path for the loss plot.
+        device (torch.device)                       -- Device on which the code was executed.
     """
     confusion_matrix = torch.zeros(num_classes, num_classes)
     counter = 0

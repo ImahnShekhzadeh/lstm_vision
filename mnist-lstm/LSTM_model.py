@@ -58,7 +58,7 @@ class LSTM(nn.Module):
             dropout=0,
             bidirectional=self.bidirectional,
         )
-        self.dropout = nn.Dropout(p=dropout_rate, inplace=True)
+        self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
         self.fc = nn.Linear(
             in_features=self.num_directions
             * self.hidden_size
