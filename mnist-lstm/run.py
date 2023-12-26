@@ -37,6 +37,10 @@ if __name__ == "__main__":
             "https://stackoverflow.com/questions/55563376/pytorch-how"
             "-does-pin-memory-work-in-dataloader"
         )
+    assert 0 < args.train_split < 1, (
+        "``train_split`` should be chosen between 0 and 1, "
+        f"but is {args.train_split}."
+    )
     print(args)
 
     if args.seed_number is not None:
@@ -65,11 +69,15 @@ if __name__ == "__main__":
         target_transform=None,
         download=True,
     )  # `60`k images for MNIST
-    print(len(full_train_dataset))
-
+    
+    num__train_samples = int(args.train_split * len(full_train_dataset))
     train_subset, val_subset = random_split(
-        dataset=full_train_dataset, lengths=[50000, 10000]
+        dataset=full_train_dataset, 
+        lengths=[
+            num__train_samples, len(full_train_dataset) - num__train_samples
+        ]
     )
+    
     train_loader = DataLoader(
         dataset=train_subset, 
         batch_size=args.batch_size,

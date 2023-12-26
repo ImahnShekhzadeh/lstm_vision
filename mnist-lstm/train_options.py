@@ -104,6 +104,12 @@ class TrainOptions:
             help="Whether to use bidirectional LSTM.",
         )
         parser.add_argument(
+            "--train_split",
+            type=float, 
+            default=5/6,
+            help="Split ratio of train and validation set.",
+        )
+        parser.add_argument(
             "--use_amp",
             action="store_true",
             help="Whether to use automatic mixed precision (AMP).",
