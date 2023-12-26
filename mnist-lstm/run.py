@@ -275,7 +275,7 @@ def main() -> None:
         args.num_epochs, train_losses, val_losses, args.saving_path
     )
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
-    confusion_matrix = produce_and_print_confusion_matrix(
+    produce_and_print_confusion_matrix(
         len(full_train_dataset.classes), test_loader, model, args.saving_path,
         device,
     )

@@ -1,6 +1,5 @@
 import torch
-import torch.nn as nn  # All neural network modules, nn.Linear, nn.Conv2D, nn.InstanceNorm2d, loss functions etc.
-import torch.nn.functional as F  # ReLU activation function, etc.
+from torch import nn
 
 
 class LSTM(nn.Module):
@@ -43,6 +42,7 @@ class LSTM(nn.Module):
         self.num_classes = num_classes
         self.sequence_length = sequence_length
         self.bidirectional = bidirectional
+        self.dropout_rate = dropout_rate
         self.device = device
 
         if self.bidirectional == True:
@@ -58,7 +58,7 @@ class LSTM(nn.Module):
             dropout=0,
             bidirectional=self.bidirectional,
         )
-        self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
+        self.dropout = nn.Dropout(p=self.dropout_rate, inplace=False)
         self.fc = nn.Linear(
             in_features=self.num_directions
             * self.hidden_size

@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import torch
 from prettytable import PrettyTable
-from torch import Tensor, nn
+from torch import Tensor
 from torch.utils.data import DataLoader
 
 
@@ -328,7 +328,9 @@ def produce_and_print_confusion_matrix(
                 confusion_matrix[t, p] += 1
                 counter += 1
 
-    # Because of the random split in the datasets, the classes are imbalanced. Thus, we should do a normalization across each label in the confusion matrix:
+    # Because of the random split in the datasets, the classes are imbalanced. 
+    # Thus, we should do a normalization across each label in the confusion 
+    # matrix:
     for i in range(num_classes):
         total_sums = 0
         for element in confusion_matrix[i]:
