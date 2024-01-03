@@ -69,3 +69,5 @@ casting to `torch.float16` enabled!
 ## TODO
 [ ] Write github action workflow for `isort` & `black` and pin the versions.
 [ ] Rerun new commits on RTX 4090 in docker container.
+[ ] With `py-cpuinfo`, print the CPU model and put this into README.
+[ ] Rename the git repo to `lstm_vision` and put the dataset loading into a separate funcion.
