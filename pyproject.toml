@@ -30,3 +30,4 @@ overwrite_in_place = true
 
 [tool.black]
 line-length = 79
+exclude = "setup.py"

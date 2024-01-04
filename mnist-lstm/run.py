@@ -54,7 +54,7 @@ def main() -> None:
             ),
         ]
     )
-    
+
     full_train_dataset = datasets.MNIST(
         root="",
         train=True,
