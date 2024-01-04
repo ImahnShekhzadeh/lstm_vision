@@ -1,6 +1,6 @@
+import argparse
 import gc
 import os
-import argparse
 from datetime import datetime
 from time import perf_counter
 
@@ -11,7 +11,6 @@ import torch
 from prettytable import PrettyTable
 from torch import Tensor
 from torch.utils.data import DataLoader
-
 
 # Timing utilities
 start_time = None
@@ -244,7 +243,7 @@ def produce_loss_plot(num_epochs, train_losses, val_losses, saving_path):
     """Plot the categorical crossentropy (loss) evolving over time.
 
     Params:
-        num_epochs (int)                        -- Number of epochs the model 
+        num_epochs (int)                        -- Number of epochs the model
             was trained.
         train_losses (numpy.array)              -- Training losses per epoch.
         val_losses (numpy.array)                -- Validation losses per epoch.
@@ -301,7 +300,11 @@ def produce_acc_plot(
 
 
 def produce_and_print_confusion_matrix(
-    num_classes, test_loader, model, saving_path, device,
+    num_classes,
+    test_loader,
+    model,
+    saving_path,
+    device,
 ):
     """Produce a confusion matrix based on the test set.
 
@@ -328,8 +331,8 @@ def produce_and_print_confusion_matrix(
                 confusion_matrix[t, p] += 1
                 counter += 1
 
-    # Because of the random split in the datasets, the classes are imbalanced. 
-    # Thus, we should do a normalization across each label in the confusion 
+    # Because of the random split in the datasets, the classes are imbalanced.
+    # Thus, we should do a normalization across each label in the confusion
     # matrix:
     for i in range(num_classes):
         total_sums = 0

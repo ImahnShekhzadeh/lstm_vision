@@ -13,7 +13,7 @@ class TrainOptions:
         parser.add_argument(
             "--dropout_rate",
             type=float,
-            default=0.,
+            default=0.0,
             help="Dropout rate for the dropout layer.",
         )
         parser.add_argument(
@@ -99,8 +99,8 @@ class TrainOptions:
         )
         parser.add_argument(
             "--train_split",
-            type=float, 
-            default=5/6,
+            type=float,
+            default=5 / 6,
             help="Split ratio of train and validation set.",
         )
         parser.add_argument(

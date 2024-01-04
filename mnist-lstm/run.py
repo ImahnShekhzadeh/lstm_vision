@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from functions import (
-    check_args,
     check_accuracy,
+    check_args,
     count_parameters,
     end_timer_and_print,
     load_checkpoint,
@@ -30,7 +30,7 @@ from torchvision import datasets, transforms
 from train_options import TrainOptions
 
 
-def main() -> None: 
+def main() -> None:
     """Main function."""
     args = TrainOptions().args
 
@@ -54,6 +54,7 @@ def main() -> None:
             ),
         ]
     )
+    
     full_train_dataset = datasets.MNIST(
         root="",
         train=True,
@@ -61,13 +62,14 @@ def main() -> None:
         target_transform=None,
         download=True,
     )  # `60`k images for MNIST
-    
+
     num__train_samples = int(args.train_split * len(full_train_dataset))
     train_subset, val_subset = random_split(
-        dataset=full_train_dataset, 
+        dataset=full_train_dataset,
         lengths=[
-            num__train_samples, len(full_train_dataset) - num__train_samples
-        ]
+            num__train_samples,
+            len(full_train_dataset) - num__train_samples,
+        ],
     )
     test_dataset = datasets.MNIST(
         root="",
@@ -76,7 +78,7 @@ def main() -> None:
         target_transform=None,
         download=True,
     )
-    
+
     loader_kwargs = {
         "batch_size": args.batch_size,
         "shuffle": True,
@@ -84,7 +86,7 @@ def main() -> None:
         "pin_memory": args.pin_memory,
     }
     train_loader = DataLoader(
-        dataset=train_subset, 
+        dataset=train_subset,
         **loader_kwargs,
     )
     val_loader = DataLoader(
@@ -116,14 +118,8 @@ def main() -> None:
         dropout_rate=args.dropout_rate,
         device=device,
     ).to(device)
-    summary(
-        model, 
-        (
-            args.batch_size, 
-            seq_length, 
-            inp_size
-        )
-    )
+    summary(model, (args.batch_size, seq_length, inp_size))
+
     # Loss and optimizer:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
     cce_sum = nn.CrossEntropyLoss(reduction="sum")
@@ -276,10 +272,13 @@ def main() -> None:
     )
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
     produce_and_print_confusion_matrix(
-        len(full_train_dataset.classes), test_loader, model, args.saving_path,
+        len(full_train_dataset.classes),
+        test_loader,
+        model,
+        args.saving_path,
         device,
     )
 
-    
+
 if __name__ == "__main__":
     main()

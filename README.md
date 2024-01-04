@@ -59,15 +59,13 @@ Training a bidirectional LSTM for `10` epochs results in,
 Train data: Got 48974/50000 with accuracy 97.95 %
 Test data: Got 9764/10000 with accuracy 97.64 %
 ```
-On an NVIDIA RTX 4090, training for `10` epochs takes about `93` s, and in total about `1.7` GB of memory is required.
+On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `10` epochs takes about `44` s, and in total about `1.7` GB of memory is required.
 
-With the flag `--use_amp`, training for `10` epochs takes about `88` s on the same hardware, i.e. there is not a huge runtime gain, 
+With the flag `--use_amp`, training for `10` epochs takes about `43` s on the same hardware, i.e. there is not a huge runtime gain, 
 but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
 accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
 casting to `torch.float16` enabled!
 
 ## TODO
 [ ] Write github action workflow for `isort` & `black` and pin the versions.
-[ ] Rerun new commits on RTX 4090 in docker container.
-[ ] With `py-cpuinfo`, print the CPU model and put this into README.
-[ ] Rename the git repo to `lstm_vision` and put the dataset loading into a separate funcion.
+[ ] Rename the git repo to `lstm_vision` and put the dataset loading, i.e. L50-L83, into `run.py`, into a separate function `get_datasets()`.
