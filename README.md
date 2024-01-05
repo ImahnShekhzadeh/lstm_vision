@@ -62,6 +62,3 @@ On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `15` e
 With the flag `--use_amp`, training for `10` epochs takes about `56` s on the same hardware, i.e. there is not a huge runtime gain, 
 but the memory consumption is only about `6.37` GB. The final accuracy on the train data remains the same, and the accuracy on the test data is `98.13 %`, 
 i.e. the performance remains the same with dynamic casting to `torch.float16` enabled!
-
-## TODO
-[ ] Rename the git repo to `lstm_vision` and put the dataset loading, i.e. L50-L83, into `run.py`, into a separate function `get_datasets()`.
