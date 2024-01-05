@@ -11,7 +11,8 @@ import numpy as np
 import torch
 from prettytable import PrettyTable
 from torch import Tensor, nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
+from torchvision import datasets, transforms
 
 # Timing utilities
 start_time = None
@@ -39,6 +40,84 @@ def check_args(args: argparse.Namespace) -> None:
         f"but is {args.train_split}."
     )
     print(args)
+
+
+def get_dataloaders(
+    channels_img: int,
+    train_split: float,
+    batch_size: int,
+    num_workers: int,
+    pin_memory: bool,
+) -> tuple[DataLoader, DataLoader, DataLoader]:
+    """
+    Get the dataloaders for the train, validation and test set.
+
+    Args:
+        train_split: Percentage of the training set to use for training.
+        batch_size (int): Batch size.
+        num_workers (int): Number of subprocesses used in the dataloaders.
+        pin_memory (bool): Whether tensors are copied into CUDA pinned memory.
+    """
+
+    # define data transformation:
+    trafo = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.5 for _ in range(channels_img)],
+                std=[0.5 for _ in range(channels_img)],
+            ),
+        ]
+    )
+
+    full_train_dataset = datasets.MNIST(
+        root="",
+        train=True,
+        transform=trafo,
+        target_transform=None,
+        download=True,
+    )  # `60`k images
+
+    num__train_samples = int(train_split * len(full_train_dataset))
+    train_subset, val_subset = random_split(
+        dataset=full_train_dataset,
+        lengths=[
+            num__train_samples,
+            len(full_train_dataset) - num__train_samples,
+        ],
+    )
+    test_dataset = datasets.MNIST(
+        root="",
+        train=False,
+        transform=trafo,
+        target_transform=None,
+        download=True,
+    )
+    print(
+        f"# Train:val:test samples: {len(train_subset)}:{len(val_subset)}:"
+        f"{len(test_dataset)} "
+    )
+
+    loader_kwargs = {
+        "batch_size": batch_size,
+        "shuffle": True,
+        "num_workers": num_workers,
+        "pin_memory": pin_memory,
+    }
+    train_loader = DataLoader(
+        dataset=train_subset,
+        **loader_kwargs,
+    )
+    val_loader = DataLoader(
+        dataset=val_subset,
+        **loader_kwargs,
+    )
+    test_loader = DataLoader(
+        dataset=test_dataset,
+        **loader_kwargs,
+    )
+
+    return train_loader, val_loader, test_loader
 
 
 def start_timer(device: torch.device) -> None:

@@ -11,6 +11,7 @@ from functions import (
     check_args,
     count_parameters,
     end_timer_and_print,
+    get_dataloaders,
     load_checkpoint,
     print__batch_info,
     produce_acc_plot,
@@ -22,9 +23,7 @@ from functions import (
 from LSTM_model import LSTM
 from torch import autocast, nn, optim
 from torch.cuda.amp import GradScaler
-from torch.utils.data import DataLoader, random_split
 from torchinfo import summary
-from torchvision import datasets, transforms
 from train_options import TrainOptions
 
 
@@ -42,75 +41,25 @@ def main() -> None:
     if torch.cuda.is_available():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
 
-    # Transform and load the data:
-    trafo = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=[0.5 for _ in range(args.channels_img)],
-                std=[0.5 for _ in range(args.channels_img)],
-            ),
-        ]
-    )
-
-    full_train_dataset = datasets.MNIST(
-        root="",
-        train=True,
-        transform=trafo,
-        target_transform=None,
-        download=True,
-    )  # `60`k images for MNIST
-
-    num__train_samples = int(args.train_split * len(full_train_dataset))
-    train_subset, val_subset = random_split(
-        dataset=full_train_dataset,
-        lengths=[
-            num__train_samples,
-            len(full_train_dataset) - num__train_samples,
-        ],
-    )
-    test_dataset = datasets.MNIST(
-        root="",
-        train=False,
-        transform=trafo,
-        target_transform=None,
-        download=True,
-    )
-
-    loader_kwargs = {
-        "batch_size": args.batch_size,
-        "shuffle": True,
-        "num_workers": args.num_workers,
-        "pin_memory": args.pin_memory,
-    }
-    train_loader = DataLoader(
-        dataset=train_subset,
-        **loader_kwargs,
-    )
-    val_loader = DataLoader(
-        dataset=val_subset,
-        **loader_kwargs,
-    )
-    test_loader = DataLoader(
-        dataset=test_dataset,
-        **loader_kwargs,
-    )
-
-    print(
-        f"We have {len(train_subset)}, {len(val_subset)}, {len(test_dataset)} "
-        "MNIST numbers to train, validate and test our LSTM with."
+    # get dataloaders
+    train_loader, val_loader, test_loader = get_dataloaders(
+        channels_img=args.channels_img,
+        train_split=args.train_split,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_memory,
     )
 
     # define sequence length and input size of LSTM based on input data
-    seq_length = full_train_dataset[0][0].shape[1]
-    inp_size = full_train_dataset[0][0].shape[2]
+    seq_length = test_loader.dataset[0][0].shape[1]
+    inp_size = test_loader.dataset[0][0].shape[2]
 
     # print model summary
     model = LSTM(
         input_size=inp_size,
         num_layers=args.num_layers,
         hidden_size=args.hidden_size,
-        num_classes=len(full_train_dataset.classes),
+        num_classes=len(test_loader.dataset.classes),
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
@@ -271,7 +220,7 @@ def main() -> None:
     )
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
     produce_and_print_confusion_matrix(
-        len(full_train_dataset.classes),
+        len(test_loader.dataset.classes),
         test_loader,
         model,
         args.saving_path,
