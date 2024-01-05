@@ -161,19 +161,23 @@ def load_checkpoint(model, optimizer, checkpoint):
     Params:
         model (torch.nn)             -- Model that should be trained further.
         optimizer (torch.optim)      -- Optimizer that was used.
-        checkpoint (torch.load)      -- Checkpoint for continuing to train.
+        checkpoint (str)             -- Checkpoint for continuing to train.
     """
-    print("=> Loading checkpoints for critic and generator models")
-    # load state dict and optimizer state:
+    assert os.path.exists(
+        checkpoint
+    ), f"Checkpoint `{checkpoint}` does not exist. Please check the path."
+
+    print("=> Loading checkpoint...")
     model.load_state_dict(state_dict=checkpoint["state_dict"])
     optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
 
 
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
-    """Creates a model checkpoint to save and load a model. The ending <.pth.tar> is commonly used for this.
+    """Creates a model checkpoint to save and load a model.
 
     Params:
-        state (dictionary)      -- The state of the model and optimizer in a dictionary.
+        state (dictionary)      -- The state of the model and optimizer in a
+            dictionary.
         filename (pth.tar)      -- The name of the checkpoint.
     """
     torch.save(state, filename)

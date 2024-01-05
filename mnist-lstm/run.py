@@ -133,9 +133,9 @@ def main() -> None:
     # Set network to train mode:
     model.train()
 
-    if args.load_cp:
+    if args.loading_path is not None:
         load_checkpoint(
-            torch.load("CNN-lr-0.0001-batch-size-64-20-06-2021-15:07.pth.tar")
+            model=model, optimizer=optimizer, checkpoint=args.loading_path
         )
 
     # Train the network:

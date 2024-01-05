@@ -87,9 +87,13 @@ class TrainOptions:
             help="Number of batches that are used for one ADAM update rule.",
         )
         parser.add_argument(
-            "--load_cp",
-            action="store_true",
-            help="Whether to load preexisting checkpoint(s) of the model.",
+            "--loading_path",
+            type=str,
+            default=None,
+            help=(
+                "Path to a checkpoint to be loaded, which is then trained for "
+                "`args.num_epochs` epochs.",
+            ),
         )
         parser.add_argument(
             "--bidirectional",
