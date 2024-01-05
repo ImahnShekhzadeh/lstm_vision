@@ -45,27 +45,23 @@ options:
 
 I ran the script `run.py` as follows:
 ```
-docker build -f Dockerfile -t mnist-lstm:1.0.0 .
-docker run --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.0.0
+docker build -f Dockerfile -t mnist-lstm:1.2.0 .
+docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.2.0
 ```
-where I assume that the `MNIST` folder already exists locally. If not, please download it manually first by extracting [`mnist.zip`](mnist.zip).
-
-The options I used are under `run_scripts.sh`.
+The options for training I used are under `run_scripts.sh`.
 
 ## Results
 
-Training a bidirectional LSTM for `10` epochs results in,
+Training a bidirectional LSTM with roughly `3.9`M params for `15` epochs results in,
 ```
-Train data: Got 48974/50000 with accuracy 97.95 %
-Test data: Got 9764/10000 with accuracy 97.64 %
+Train data: Got 48974/50000 with accuracy 98.56 %
+Test data: Got 9764/10000 with accuracy 98.13 %
 ```
-On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `10` epochs takes about `44` s, and in total about `1.7` GB of memory is required.
+On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `15` epochs takes about `58` s, and in total about `12.56` GB of GPU memory are required.
 
-With the flag `--use_amp`, training for `10` epochs takes about `43` s on the same hardware, i.e. there is not a huge runtime gain, 
-but the memory consumption is only about `950` MB. The final accuracy on the train data remains the same, and the 
-accuracy on the test data is about `97.63 %`, i.e. the performance basically remains the same with dynamic 
-casting to `torch.float16` enabled!
+With the flag `--use_amp`, training for `10` epochs takes about `56` s on the same hardware, i.e. there is not a huge runtime gain, 
+but the memory consumption is only about `6.37` GB. The final accuracy on the train data remains the same, and the accuracy on the test data is `98.13 %`, 
+i.e. the performance remains the same with dynamic casting to `torch.float16` enabled!
 
 ## TODO
-[ ] Write github action workflow for `isort` & `black` and pin the versions.
 [ ] Rename the git repo to `lstm_vision` and put the dataset loading, i.e. L50-L83, into `run.py`, into a separate function `get_datasets()`.

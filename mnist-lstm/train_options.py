@@ -1,5 +1,4 @@
 import argparse
-import math
 
 
 class TrainOptions:
@@ -78,7 +77,7 @@ class TrainOptions:
         parser.add_argument(
             "--num_epochs",
             type=int,
-            default=int(1e1),
+            default=10,
             help="Number of epochs used for training of the NN.",
         )
         parser.add_argument(
