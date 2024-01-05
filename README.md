@@ -1,4 +1,4 @@
-# mnist-lstm
+# lstm-vision
 Repository containing code to train an LSTM, e.g. on MNIST. Note that this repository is more for showing that LSTMs can also be used to do image classification. To use the right inductive bias, a CNN/ResNet/DenseNet/etc. should be preferred, since an LSTM treats the image sequentially, i.e. pixel by pixel. 
 
 ## Options
@@ -45,8 +45,8 @@ options:
 
 I ran the script `run.py` as follows:
 ```
-docker build -f Dockerfile -t mnist-lstm:1.2.0 .
-docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/mnist-lstm:/app/scripts --gpus all -it mnist-lstm:1.2.0
+docker build -f Dockerfile -t lstm-vision:1.2.0 .
+docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm-vision:/app/scripts --gpus all -it lstm-vision:1.2.0
 ```
 The options for training I used are under `run_scripts.sh`.
 
