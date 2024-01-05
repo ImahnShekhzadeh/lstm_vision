@@ -6,8 +6,6 @@ from datetime import datetime
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from functions import (
     check_accuracy,
     check_args,
@@ -22,7 +20,7 @@ from functions import (
     start_timer,
 )
 from LSTM_model import LSTM
-from torch import autocast
+from torch import autocast, nn, optim
 from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader, random_split
 from torchinfo import summary
@@ -219,13 +217,6 @@ def main() -> None:
                 batch_size = val_output.shape[0]
                 val_num_samples += batch_size
 
-                if val_loss < min_val_loss:
-                    min_val_loss = val_loss
-                    checkpoint = {
-                        "state_dict": deepcopy(model.state_dict()),
-                        "optimizer": deepcopy(optimizer.state_dict()),
-                    }
-
                 print__batch_info(
                     batch_idx=val_batch_idx,
                     loader=val_loader,
@@ -242,6 +233,13 @@ def main() -> None:
         val_losses.append(
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
         )
+        if val_losses[epoch] < min_val_loss:
+            min_val_loss = val_losses[epoch]
+            checkpoint = {
+                "state_dict": deepcopy(model.state_dict()),
+                "optimizer": deepcopy(optimizer.state_dict()),
+            }
+
         # Calculate accuracies for each epoch:
         train_accs.append(num_correct / num_samples)
         val_accs.append(val_num_correct / val_num_samples)
@@ -264,6 +262,7 @@ def main() -> None:
         ),
     )
     count_parameters(model)
+    load_checkpoint(model=model, checkpoint=checkpoint)
     check_accuracy(train_loader, model, mode="train", device=device)
     check_accuracy(test_loader, model, mode="test", device=device)
 

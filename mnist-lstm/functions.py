@@ -3,13 +3,14 @@ import gc
 import os
 from datetime import datetime
 from time import perf_counter
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import torch
 from prettytable import PrettyTable
-from torch import Tensor
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 
 # Timing utilities
@@ -155,21 +156,22 @@ def print__batch_info(
         print(f"{formatted_line}")
 
 
-def load_checkpoint(model, optimizer, checkpoint):
+def load_checkpoint(
+    model: nn.Module,
+    checkpoint: dict[torch.Tensor, torch.Tensor],
+    optimizer: Optional[torch.optim.Optimizer] = None,
+):
     """Load an existing checkpoint of the model to continue training.
 
-    Params:
-        model (torch.nn)             -- Model that should be trained further.
-        optimizer (torch.optim)      -- Optimizer that was used.
-        checkpoint (str)             -- Checkpoint for continuing to train.
+    Args:
+        model: NN for which state dict is loaded.
+        checkpoint: Checkpoint dictionary.
+        optimizer: Optimizer for which state dict is loaded.
     """
-    assert os.path.exists(
-        checkpoint
-    ), f"Checkpoint `{checkpoint}` does not exist. Please check the path."
-
-    print("=> Loading checkpoint...")
     model.load_state_dict(state_dict=checkpoint["state_dict"])
-    optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
+    if optimizer is not None:
+        optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
+    print("=> Checkpoint loaded.")
 
 
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
@@ -184,11 +186,11 @@ def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
     print("\n=> Saving checkpoint")
 
 
-def count_parameters(model):
-    """Calculate the total number of parameters in the model.
+def count_parameters(model: nn.Module) -> None:
+    """Print the number of parameters per module.
 
-    Params:
-        model (torch.nn)        -- Model for which we want the total number of parameters.
+    Args:
+        model: Model for which we want the total number of parameters.
     """
     table = PrettyTable(["Modules", "Parameters"])
     total_params = 0
@@ -199,7 +201,6 @@ def count_parameters(model):
         table.add_row([name, param])
         total_params += param
     print(table)
-    return total_params
 
 
 def check_accuracy(loader, model, mode, device):
