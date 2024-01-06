@@ -14,9 +14,6 @@ from torch import Tensor, nn
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
-# Timing utilities
-start_time = None
-
 
 def check_args(args: argparse.Namespace) -> None:
     """
@@ -120,10 +117,16 @@ def get_dataloaders(
     return train_loader, val_loader, test_loader
 
 
-def start_timer(device: torch.device) -> None:
-    """Start the timer."""
-    global start_time
+def start_timer(device: torch.device) -> float:
+    """
+    Start the timer.
 
+    Args:
+        device (torch.device): Device on which the code is executed.
+
+    Returns:
+        Time at which the training started.
+    """
     gc.collect()
 
     if device.type == "cuda":
@@ -131,33 +134,37 @@ def start_timer(device: torch.device) -> None:
         torch.cuda.reset_max_memory_allocated()
         torch.cuda.synchronize()
 
-    start_time = perf_counter()
+    return perf_counter()
 
 
-def end_timer_and_print(device: torch.device, local_msg: str) -> None:
+def end_timer_and_print(
+    start_time: float, device: torch.device, local_msg: str = ""
+) -> float:
     """
     End the timer and print the time it took to execute the code.
 
     Args:
-        device (torch.device): Device on which the code was executed.
-        local_msg (str): Local message to print.
+        start_time: Time at which the training started.
+        device: Device on which the code was executed.
+        local_msg: Local message to print.
 
     Returns:
-        None
+        Time it took to execute the code.
     """
     if device.type == "cuda":
         torch.cuda.synchronize()
-    end_time = perf_counter()
-    msg = (
-        f"{local_msg}\n\tTotal execution time = {end_time - start_time:.3f} "
-        f"[sec]"
-    )
+
+    time_diff = perf_counter() - start_time
+
+    msg = f"{local_msg}\n\tTotal execution time = {time_diff:.3f} [sec]"
     if device.type == "cuda":
         msg += (
             f"\n\tMax memory used by tensors = "
             f"{torch.cuda.max_memory_allocated() / 1024**2:.3f} [MB]"
         )
     print(msg)
+
+    return time_diff
 
 
 def format_line(

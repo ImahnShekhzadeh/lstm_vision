@@ -87,7 +87,7 @@ def main() -> None:
         )
 
     # Train the network:
-    start_timer(device=device)
+    start_time = start_timer(device=device)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
@@ -208,6 +208,7 @@ def main() -> None:
         ceil(len(train_loader.dataset) / args.batch_size) * args.num_epochs
     )
     end_timer_and_print(
+        start_time=start_time,
         device=device,
         local_msg=(
             f"Training {args.num_epochs} {epoch_str} ({num_iters} iterations)"
