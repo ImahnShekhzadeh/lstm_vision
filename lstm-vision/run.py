@@ -3,6 +3,7 @@ import sys
 import time
 from copy import deepcopy
 from datetime import datetime
+from math import ceil
 
 import numpy as np
 import torch
@@ -199,15 +200,25 @@ def main() -> None:
             f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
         )
         model.train()
+
+    epoch_str = "epoch"
+    if args.num_epochs > 1:
+        epoch_str += "s"
+    num_iters = (
+        ceil(len(train_loader.dataset) / args.batch_size) * args.num_epochs
+    )
     end_timer_and_print(
-        device=device, local_msg=f"Training {args.num_epochs} epoch(s)"
+        device=device,
+        local_msg=(
+            f"Training {args.num_epochs} {epoch_str} ({num_iters} iterations)"
+        ),
     )
     save_checkpoint(
         state=checkpoint,
         filename=os.path.join(
             args.saving_path,
             f"lstm_cp_{args.learning_rate}_{args.batch_size}-"
-            f"{datetime.now().strftime('%dp%mp%Y_%H:%M')}.pt",
+            f"{datetime.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
         ),
     )
     count_parameters(model)

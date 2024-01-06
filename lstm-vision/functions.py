@@ -180,7 +180,7 @@ def format_line(
     padded__current_sample = str(current_samples).zfill(
         len(str(total_samples))
     )
-    sample_info_str = f"[{padded__current_sample} / {total_samples} ({percentage:05.2f} %)]".ljust(
+    sample_info_str = f"[{padded__current_sample} / {total_samples} ({percentage:06.2f} %)]".ljust(
         max_sample_info_width
     )
     loss_str = f"{mode.capitalize()} loss: {loss:.4f}"
