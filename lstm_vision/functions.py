@@ -1,7 +1,8 @@
 import argparse
 import gc
 import os
-from datetime import datetime
+from copy import deepcopy
+from datetime import datetime as dt
 from time import perf_counter
 from typing import Optional
 
@@ -10,7 +11,8 @@ import matplotlib.ticker as ticker
 import numpy as np
 import torch
 from prettytable import PrettyTable
-from torch import Tensor, nn
+from torch import Tensor, autocast, nn
+from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
@@ -115,6 +117,169 @@ def get_dataloaders(
     )
 
     return train_loader, val_loader, test_loader
+
+
+def train_and_validate(
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    num_epochs: int,
+    device: torch.device,
+    use_amp: bool,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    freq_output__train: int,
+    freq_output__val: int,
+) -> tuple[float, dict[torch.Tensor, torch.Tensor], list, list, list, list]:
+    """
+    Train and validate the model.
+
+    Args:
+        model: Model to train.
+        optimizer: Optimizer to use.
+        num_epochs: Number of epochs to train the model.
+        device: Device on which the code is executed.
+        use_amp: Whether to use automatic mixed precision.
+        train_loader: Dataloader for the training set.
+        val_loader: Dataloader for the validation set.
+        freq_output__train: Frequency at which to print the training info.
+        freq_output__val: Frequency at which to print the validation info.
+        saving_path: Path to which to save the model checkpoint.
+
+    Returns:
+        start_time: Time at which the training started.
+        checkpoint: Checkpoint of the model.
+        train_losses: Training losses per epoch.
+        val_losses: Validation losses per epoch.
+        train_accs: Training accuracies per epoch.
+        val_accs: Validation accuracies per epoch.
+    """
+
+    # define loss functions:
+    cce_mean = nn.CrossEntropyLoss(reduction="mean")
+    cce_sum = nn.CrossEntropyLoss(reduction="sum")
+
+    start_time = start_timer(device=device)
+    train_losses, val_losses, train_accs, val_accs = [], [], [], []
+    min_val_loss = float("inf")
+
+    scaler = GradScaler(enabled=use_amp)
+
+    for epoch in range(num_epochs):
+        t0 = perf_counter()  # TODO: use `start_timer()` instead
+        trainingLoss_perEpoch, valLoss_perEpoch = [], []
+        num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
+
+        for batch_idx, (images, labels) in enumerate(train_loader):
+            model.train()
+            labels = labels.to(device)
+            optimizer.zero_grad()
+
+            with autocast(
+                device_type=device.type,
+                dtype=torch.float16,
+                enabled=use_amp,
+            ):
+                output = model(images.squeeze_(dim=1).to(device))  # `(N, 10)`
+                loss = cce_mean(output, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            trainingLoss_perEpoch.append(cce_sum(output, labels).cpu().item())
+
+            # calculate accuracy
+            with torch.no_grad():
+                model.eval()
+                batch_size = output.shape[0]
+                output_maxima, max_indices = output.max(dim=1, keepdim=False)
+                num_correct += (max_indices == labels).sum().cpu().item()
+                num_samples += batch_size
+
+            print__batch_info(
+                batch_idx=batch_idx,
+                loader=train_loader,
+                epoch=epoch,
+                t_0=t0,
+                loss=loss,
+                mode="train",
+                frequency=freq_output__train,
+            )
+
+        # validation stuff:
+        with torch.no_grad():
+            model.eval()
+
+            for val_batch_idx, (val_images, val_labels) in enumerate(
+                val_loader
+            ):
+                val_labels = val_labels.to(device)
+
+                with autocast(
+                    device_type=device.type,
+                    dtype=torch.float16,
+                    enabled=use_amp,
+                ):
+                    val_output = model(
+                        val_images.squeeze_(dim=1).to(device)
+                    )  # `[N, C]`
+                    val_loss = cce_sum(val_output, val_labels).cpu().item()
+
+                valLoss_perEpoch.append(val_loss)
+
+                # calculate accuracy
+                # TODO: write a `calculate_accuracy()` function
+                val_output_maxima, val_max_indices = val_output.max(
+                    dim=1, keepdim=False
+                )
+                val_num_correct += (
+                    (val_max_indices == val_labels).cpu().sum().item()
+                )
+                batch_size = val_output.shape[0]
+                val_num_samples += batch_size
+
+                print__batch_info(
+                    batch_idx=val_batch_idx,
+                    loader=val_loader,
+                    epoch=epoch,
+                    t_0=t0,
+                    loss=cce_mean(val_output, val_labels).cpu().item(),
+                    mode="val",
+                    frequency=freq_output__val,
+                )
+
+        train_losses.append(
+            np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
+        )
+        val_losses.append(
+            np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
+        )
+        if val_losses[epoch] < min_val_loss:
+            min_val_loss = val_losses[epoch]
+            checkpoint = {
+                "state_dict": deepcopy(model.state_dict()),
+                "optimizer": deepcopy(optimizer.state_dict()),
+            }
+
+        # Calculate accuracies for each epoch:
+        train_accs.append(num_correct / num_samples)
+        val_accs.append(val_num_correct / val_num_samples)
+        print(
+            f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
+            f"Mean train/val loss: {train_losses[epoch]:.4f}/"
+            f"{val_losses[epoch]:.4f}\tTrain/val acc: "
+            f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
+        )
+        model.train()
+
+    return (
+        start_time,
+        checkpoint,
+        train_losses,
+        val_losses,
+        train_accs,
+        val_accs,
+    )
 
 
 def start_timer(device: torch.device) -> float:
@@ -353,7 +518,7 @@ def produce_loss_plot(num_epochs, train_losses, val_losses, saving_path):
     plt.savefig(
         os.path.join(
             saving_path,
-            "loss-lr-" + datetime.now().strftime("%d-%m-%Y-%H:%M") + ".pdf",
+            f"loss-lr-{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
         )
     )
     plt.close()
@@ -382,9 +547,7 @@ def produce_acc_plot(
     plt.savefig(
         os.path.join(
             saving_path,
-            "accuracy-plot-"
-            + datetime.now().strftime("%d-%m-%Y-%H:%M")
-            + ".pdf",
+            f"accuracy-plot-{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
         )
     )
     plt.close()
@@ -443,9 +606,7 @@ def produce_and_print_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            "confusion_matrix_"
-            + datetime.now().strftime("%d-%m-%Y-%H:%M")
-            + ".pdf",
+            f"confusion_matrix_{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
         )
     )
 
