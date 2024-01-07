@@ -50,7 +50,7 @@ def main() -> None:
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
 
-    # print model summary
+    # define model
     model = LSTM(
         input_size=inp_size,
         num_layers=args.num_layers,
@@ -61,7 +61,14 @@ def main() -> None:
         dropout_rate=args.dropout_rate,
         device=device,
     ).to(device)
+
+    # print model summary
     summary(model, (args.batch_size, seq_length, inp_size))
+
+    # compile model if specified
+    if args.compile_mode is not None:
+        print(f"\nCompiling model in ``{args.compile_mode}`` mode...\n")
+        model = torch.compile(model, mode=args.compile_mode, fullgraph=False)
 
     # Optimizer:
     optimizer = optim.Adam(

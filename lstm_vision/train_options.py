@@ -10,6 +10,14 @@ class TrainOptions:
             description="Hyperparameters and parameters"
         )
         parser.add_argument(
+            "--compile_mode",
+            type=str,
+            default=None,
+            help=(
+                "Mode for compilation of the model when using `torch.compile`."
+            ),
+        )
+        parser.add_argument(
             "--dropout_rate",
             type=float,
             default=0.0,

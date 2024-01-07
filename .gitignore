@@ -11,3 +11,6 @@ __pycache__
 
 # Test Jupyter NB
 test_sth.ipynb
+
+# log files
+*.log

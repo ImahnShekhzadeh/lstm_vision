@@ -24,6 +24,15 @@ def check_args(args: argparse.Namespace) -> None:
     Args:
         args: Arguments provided by the user.
     """
+    assert args.compile_mode in [
+        None,
+        "default",
+        "reduce-overhead",
+        "max-autotune",
+    ], (
+        f"``{args.compile_mode}`` is not a valid compile mode in "
+        "``torch.compile()``."
+    )
     if args.pin_memory:
         assert args.num_workers > 0, (
             "With pinned memory, ``num_workers > 0`` should be chosen, cf. "

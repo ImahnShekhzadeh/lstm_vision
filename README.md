@@ -1,5 +1,7 @@
 # lstm-vision
-Repository containing code to train an LSTM, e.g. on MNIST. In principle, any image dataset can be used, for this change [these lines](https://github.com/ImahnShekhzadeh/lstm-vision/blob/main/mnist-lstm/functions.py#L73-L95) and don't forget to adjust the flag `channels_img`, which is by default `1`.
+Repository containing PyTorch code to train an LSTM on a CV dataset, e.g. MNIST. In principle, any image dataset can be used, for this change [these lines](https://github.com/ImahnShekhzadeh/lstm-vision/blob/main/mnist-lstm/functions.py#L73-L95) and don't forget to adjust the flag `channels_img`, which is by default `1`.
+
+The code can be run both with [AMP](https://pytorch.org/docs/stable/amp.html) (automatic mixed precision) enabled and `torch.compile()`.
 
 Note that this repository is more for showing that LSTMs can also be used to do image classification. To use the right inductive bias, a CNN/ResNet/DenseNet/etc. should be preferred, since an LSTM treats the image sequentially, i.e. pixel by pixel. 
 
@@ -10,6 +12,8 @@ The main script `run.py` can be run with different options,
 ```
 options:
   -h, --help            show this help message and exit
+  --compile_mode COMPILE_MODE
+                        Mode for compilation of the model when using `torch.compile`.
   --dropout_rate DROPOUT_RATE
                         Dropout rate for the dropout layer.
   --freq_output__train FREQ_OUTPUT__TRAIN
@@ -64,3 +68,6 @@ On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `15` e
 With the flag `--use_amp`, training for `10` epochs takes about `56` s on the same hardware, i.e. there is not a huge runtime gain, 
 but the memory consumption is only about `6.37` GB. The final accuracy on the train data remains the same, and the accuracy on the test data is `98.13 %`, 
 i.e. the performance remains the same with dynamic casting to `torch.float16` enabled!
+
+I also tried the flag `--compile_mode` (with all modes "default", "reduce-overhead" & "max-autotune"), and noticed that the runtime slightly _increases_ when using the MNIST dataset. 
+This happens, since the warmup phase, cf. [here](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html), takes a long time, and after the warmup phase, the runtime epoch is comparable to no compilation. However, for other CV datasets (e.g. CIFAR100) and other model architectures, this might change! Also, please note that `torch.compile(..., full_graph=False)` has to be used, since with `full_graph=True`, since `TorchDynamo` does not allow this for RNNs/GRUs/LSTMs.
