@@ -119,16 +119,16 @@ def main() -> None:
             f"lstm_cp_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
         ),
     )
-
-    count_parameters(model)
-    load_checkpoint(model=model, checkpoint=checkpoint)
-    check_accuracy(train_loader, model, mode="train", device=device)
-    check_accuracy(test_loader, model, mode="test", device=device)
-
+    count_parameters(model)  # TODO: rename, misleadig name
     produce_loss_plot(
         args.num_epochs, train_losses, val_losses, args.saving_path
     )
     produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
+
+    # check accuracy on train and test set and produce confusion matrix
+    load_checkpoint(model=model, checkpoint=checkpoint)
+    check_accuracy(train_loader, model, mode="train", device=device)
+    check_accuracy(test_loader, model, mode="test", device=device)
     produce_and_print_confusion_matrix(
         len(test_loader.dataset.classes),
         test_loader,
