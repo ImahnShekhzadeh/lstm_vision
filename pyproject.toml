@@ -10,14 +10,14 @@ license = {text = "MIT license"}
 requires-python = ">=3.10"
 
 dependencies = [
-    "isort~=5.12.0",
-    "black~=23.10.1",
-    "wandb~=0.16.0",
-    "termcolor~=2.3.0",
-    "torchinfo~=1.8.0", 
-    "prettytable~=3.9.0",
-    "python-dotenv~=1.0.0",
-    "matplotlib~=3.8.2",
+    "isort~=5.12",
+    "black~=23.10",
+    "wandb~=0.16",
+    "termcolor~=2.3",
+    "torchinfo~=1.8", 
+    "prettytable~=3.9",
+    "python-dotenv~=1.0",
+    "matplotlib~=3.2",
 ]
 
 [tool.isort]
