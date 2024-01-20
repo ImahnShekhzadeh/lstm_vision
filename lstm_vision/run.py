@@ -103,6 +103,7 @@ def main() -> None:
         val_loader=val_loader,
         freq_output__train=args.freq_output__train,
         freq_output__val=args.freq_output__val,
+        max_norm=args.max_norm,
     )
 
     epoch_str = "epoch"

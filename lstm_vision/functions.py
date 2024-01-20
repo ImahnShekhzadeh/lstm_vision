@@ -13,6 +13,7 @@ import torch
 from prettytable import PrettyTable
 from torch import Tensor, autocast, nn
 from torch.cuda.amp import GradScaler
+from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
@@ -136,8 +137,9 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    freq_output__train: int,
-    freq_output__val: int,
+    freq_output__train: Optional[int] = 10,
+    freq_output__val: Optional[int] = 10,
+    max_norm: Optional[float] = None,
 ) -> tuple[float, dict[torch.Tensor, torch.Tensor], list, list, list, list]:
     """
     Train and validate the model.
@@ -152,7 +154,7 @@ def train_and_validate(
         val_loader: Dataloader for the validation set.
         freq_output__train: Frequency at which to print the training info.
         freq_output__val: Frequency at which to print the validation info.
-        saving_path: Path to which to save the model checkpoint.
+        max_norm: Maximum norm of the gradients.
 
     Returns:
         start_time: Time at which the training started.
@@ -192,6 +194,10 @@ def train_and_validate(
                 loss = cce_mean(output, labels)
 
             scaler.scale(loss).backward()
+            if max_norm is not None:
+                scaler.unscale_(optimizer)
+                for param_group in optimizer.param_groups:
+                    clip_grad_norm_(param_group["params"], max_norm=max_norm)
             scaler.step(optimizer)
             scaler.update()
 

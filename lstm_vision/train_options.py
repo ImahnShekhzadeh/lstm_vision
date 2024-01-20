@@ -36,6 +36,12 @@ class TrainOptions:
             help="Frequency of outputting the validation loss and accuracy.",
         )
         parser.add_argument(
+            "--max_norm",
+            type=float,
+            default=None,
+            help="Max norm for gradient clipping.",
+        )
+        parser.add_argument(
             "--num_workers",
             type=int,
             default=0,
