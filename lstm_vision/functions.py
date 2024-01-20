@@ -18,6 +18,30 @@ from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
 
+def total_norm__grads(model: nn.Module, max_norm: Optional[float]):
+    """
+    Calculate total norm of gradients.
+
+    Args:
+        model: Model for which we want to check whether gradient clipping is
+            necessary.
+        max_norm: Maximum norm of the gradients.
+    """
+    if max_norm is not None:
+        print(f"Gradient clipping is enabled with `max_norm = {max_norm}`.\n")
+    else:
+        print(f"Gradient clipping is disabled.\n")
+
+    total_norm = 0
+    for p in model.parameters():
+        if p.grad is not None:
+            param_norm = p.grad.data.norm(2)  # in case 2-norm is clipped
+            total_norm += param_norm.item() ** 2
+    total_norm = total_norm**0.5
+
+    return total_norm
+
+
 def check_args(args: argparse.Namespace) -> None:
     """
     Check provided arguments and print them to CLI.
