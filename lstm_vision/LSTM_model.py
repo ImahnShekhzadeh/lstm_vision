@@ -19,7 +19,6 @@ class LSTM(nn.Module):
         sequence_length,
         bidirectional,
         dropout_rate,
-        device,
     ):
         """
         Args:
@@ -33,7 +32,6 @@ class LSTM(nn.Module):
                 `(N, sequence_length, input_size)`
             bidirectional: if `True`, use bidirectional LSTM
             dropout_rate: dropout rate for the dropout layer
-            device: `cuda` or `cpu`
         """
         super(LSTM, self).__init__()
         self.input_size = input_size
@@ -43,7 +41,6 @@ class LSTM(nn.Module):
         self.sequence_length = sequence_length
         self.bidirectional = bidirectional
         self.dropout_rate = dropout_rate
-        self.device = device
 
         if self.bidirectional == True:
             self.num_directions = 2
@@ -74,13 +71,13 @@ class LSTM(nn.Module):
             self.num_layers * self.num_directions,
             x.size(0),
             self.hidden_size,
-            device=self.device,
+            device=x.device,
         )
         c0 = torch.zeros(
             self.num_layers * self.num_directions,
             x.size(0),
             self.hidden_size,
-            device=self.device,
+            device=x.device,
         )
 
         # Forward prop:

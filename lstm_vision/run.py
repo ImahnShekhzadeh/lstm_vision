@@ -59,7 +59,6 @@ def main() -> None:
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
-        device=device,
     ).to(device)
 
     # print model summary
