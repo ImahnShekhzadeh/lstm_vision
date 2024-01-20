@@ -20,6 +20,12 @@ options:
                         Frequency of outputting the training loss and accuracy.
   --freq_output__val FREQ_OUTPUT__VAL
                         Frequency of outputting the validation loss and accuracy.
+  --max_norm MAX_NORM
+                        Max norm for gradient clipping.
+  --num_workers NUM_WORKERS
+                        Number of subprocesses used in the dataloaders.
+  --pin_memory PIN_MEMORY
+                        Whether tensors are copied into CUDA pinned memory.
   --saving_path SAVING_PATH
                         Saving path for the files (loss plot, accuracy plot, etc.)
   --seed_number SEED_NUMBER
