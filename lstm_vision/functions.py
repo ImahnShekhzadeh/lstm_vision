@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
 
-def total_norm__grads(model: nn.Module, max_norm: Optional[float]):
+def total_norm__grads(model: nn.Module):
     """
     Calculate total norm of gradients.
 
@@ -27,11 +27,6 @@ def total_norm__grads(model: nn.Module, max_norm: Optional[float]):
             necessary.
         max_norm: Maximum norm of the gradients.
     """
-    if max_norm is not None:
-        print(f"Gradient clipping is enabled with `max_norm = {max_norm}`.\n")
-    else:
-        print(f"Gradient clipping is disabled.\n")
-
     total_norm = 0
     for p in model.parameters():
         if p.grad is not None:
