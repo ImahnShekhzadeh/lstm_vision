@@ -453,17 +453,25 @@ def train_and_validate(
     )
 
 
-def start_timer(device: torch.device) -> float:
+def start_timer(device: torch.device | int) -> float:
     """
     Start the timer.
 
     Args:
-        device (torch.device): Device on which the code is executed.
+        device: Device on which the code is executed. Can also be an int
+            representing the GPU ID.
 
     Returns:
         Time at which the training started.
     """
     gc.collect()
+
+    # check if device is a ``torch.device`` object; if not, assume it's an
+    # int and convert it
+    if not isinstance(device, torch.device):
+        device = torch.device(
+            f"cuda:{device}" if isinstance(device, int) else "cpu"
+        )
 
     if device.type == "cuda":
         torch.cuda.empty_cache()
