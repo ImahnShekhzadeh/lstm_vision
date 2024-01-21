@@ -58,7 +58,7 @@ options:
 I ran the script `run.py` as follows:
 ```
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
-docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm_vision:/app/scripts --gpus all -it lstm-vision:1.2.0
+docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm_vision:/app/scripts -v $(pwd)/configs:/app/configs --gpus all -it lstm-vision:1.2.0 --config configs/conf.json
 ```
 The options for training I used are under `run_scripts.sh`.
 
