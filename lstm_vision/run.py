@@ -2,10 +2,12 @@ import os
 import sys
 from datetime import datetime as dt
 from math import ceil
+from typing import Optional
 
 import torch
 from functions import (
     check_accuracy,
+    cleanup,
     count_parameters,
     end_timer_and_print,
     get_dataloaders,
@@ -16,21 +18,36 @@ from functions import (
     produce_loss_plot,
     retrieve_args,
     save_checkpoint,
+    setup,
     train_and_validate,
 )
-from LSTM_model import LSTM
 from torch import optim
 from torchinfo import summary
 from train_options import get_parser
 
 
-def main() -> None:
-    """Main function."""
+def main(
+    rank: Optional[int] = None,
+    world_size: Optional[int] = None,
+) -> None:
+    """
+    Main function.
+
+    Args:
+        rank: rank of the current process
+        world_size: number of processes
+    """
     parser = get_parser()
     args = retrieve_args(parser)
 
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
+
+    if args.use_ddp:
+        setup(
+            rank=rank,
+            world_size=world_size,
+        )
 
     # Set device, get gpu, check number of available gpus
     # and whether DDP is supposed to be used:
@@ -144,6 +161,11 @@ def main() -> None:
             f"lstm_cp_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
         ),
     )
+
+    # destroy process group if DDP was used (for clean exit)
+    if args.use_ddp:
+        cleanup()
+
     count_parameters(model)  # TODO: rename, misleadig name
     produce_loss_plot(
         args.num_epochs, train_losses, val_losses, args.saving_path
