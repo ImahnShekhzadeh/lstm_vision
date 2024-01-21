@@ -80,8 +80,8 @@ def get_model(
     sequence_length: int,
     bidirectional: bool,
     dropout_rate: float,
+    device: torch.device | int,
     use_ddp: bool = False,
-    gpu_id: Optional[int] = None,
 ) -> nn.Module:
     """
 
@@ -95,7 +95,12 @@ def get_model(
         sequence_length: input is of shape `(N, sequence_length, input_size)`
         bidirectional: if `True`, use bidirectional LSTM
         dropout_rate: dropout rate for the dropout layer
-        gpu_id: GPU ID to use. If ``None``, CPU is used.
+        device: Device on which the code is executed. Can also be an int
+            representing the GPU ID.
+        use_ddp: Whether to use DDP.
+
+    Returns:
+        Model.
     """
 
     # define model
@@ -108,12 +113,10 @@ def get_model(
         bidirectional=bidirectional,
         dropout_rate=dropout_rate,
     )
-    if gpu_id is not None:
-        model.to(gpu_id)
+    model.to(device)
 
     if use_ddp:
-        assert gpu_id is not None, "GPU ID must be specified when using DDP."
-        model = DDP(model, device_ids=[gpu_id])
+        model = DDP(model, device_ids=[device])
 
     return model
 
@@ -482,19 +485,28 @@ def start_timer(device: torch.device | int) -> float:
 
 
 def end_timer_and_print(
-    start_time: float, device: torch.device, local_msg: str = ""
+    start_time: float, device: torch.device | int, local_msg: str = ""
 ) -> float:
     """
     End the timer and print the time it took to execute the code.
 
     Args:
         start_time: Time at which the training started.
-        device: Device on which the code was executed.
+        device: Device on which the code was executed. Can also be an int
+            representing the GPU ID.
         local_msg: Local message to print.
 
     Returns:
         Time it took to execute the code.
     """
+
+    # check if device is a ``torch.device`` object; if not, assume it's an
+    # int and convert it
+    if not isinstance(device, torch.device):
+        device = torch.device(
+            f"cuda:{device}" if isinstance(device, int) else "cpu"
+        )
+
     if device.type == "cuda":
         torch.cuda.synchronize()
 

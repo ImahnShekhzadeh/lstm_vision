@@ -1,5 +1,6 @@
 import os
 import sys
+from argparse import Namespace
 from datetime import datetime as dt
 from math import ceil
 from typing import Optional
@@ -21,24 +22,25 @@ from functions import (
     setup,
     train_and_validate,
 )
+from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
 from train_options import get_parser
 
 
 def main(
-    rank: Optional[int] = None,
-    world_size: Optional[int] = None,
+    rank: int,
+    world_size: int,
+    args: Namespace,
 ) -> None:
     """
     Main function.
 
     Args:
+        args: command line arguments
         rank: rank of the current process
         world_size: number of processes
     """
-    parser = get_parser()
-    args = retrieve_args(parser)
 
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
@@ -48,28 +50,6 @@ def main(
             rank=rank,
             world_size=world_size,
         )
-
-    # Set device, get gpu, check number of available gpus
-    # and whether DDP is supposed to be used:
-    num_gpus = torch.cuda.device_count()
-    use_gpu = num_gpus >= 1
-    device = torch.device("cuda:0" if use_gpu else "cpu")
-    gpu_id = None
-
-    if use_gpu:
-        gpu_id = torch.cuda.current_device()
-        list_gpus = [torch.cuda.get_device_name(i) for i in range(num_gpus)]
-        print(f"\nGPU(s): {list_gpus}\n")
-
-    if args.use_ddp:
-        if num_gpus > 1:
-            print("Using DistributedDataParallel.")
-        else:
-            args.use_ddp = False
-            print(
-                "DistributedDataParallel not used, since two or more GPUs are "
-                "NOT available."
-            )
 
     # get dataloaders
     train_loader, val_loader, test_loader = get_dataloaders(
@@ -94,8 +74,8 @@ def main(
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
+        device=rank,
         use_ddp=args.use_ddp,
-        gpu_id=gpu_id,
     )
     summary(model, (args.batch_size, seq_length, inp_size))
 
@@ -132,7 +112,7 @@ def main(
         model=model,
         optimizer=optimizer,
         num_epochs=args.num_epochs,
-        device=device,
+        device=rank,
         use_amp=args.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,
@@ -149,7 +129,7 @@ def main(
     )
     end_timer_and_print(
         start_time=start_time,
-        device=device,
+        device=rank,
         local_msg=(
             f"Training {args.num_epochs} {epoch_str} ({num_iters} iterations)"
         ),
@@ -174,16 +154,33 @@ def main(
 
     # check accuracy on train and test set and produce confusion matrix
     load_checkpoint(model=model, checkpoint=checkpoint)
-    check_accuracy(train_loader, model, mode="train", device=device)
-    check_accuracy(test_loader, model, mode="test", device=device)
+    check_accuracy(train_loader, model, mode="train", device=rank)
+    check_accuracy(test_loader, model, mode="test", device=rank)
     produce_and_print_confusion_matrix(
         len(test_loader.dataset.classes),  # TODO: write `num_clases` instead
         test_loader,
         model,
         args.saving_path,
-        device,
+        rank,
     )
 
 
 if __name__ == "__main__":
-    main()
+    parser = get_parser()
+    args = retrieve_args(parser)
+
+    # define world size (number of GPUs)
+    world_size = torch.cuda.device_count()
+
+    if torch.cuda.is_available():
+        list_gpus = [torch.cuda.get_device_name(i) for i in range(world_size)]
+        print(f"\nGPU(s): {list_gpus}\n")
+
+    if args.use_ddp and world_size > 1:
+        mp.spawn(main(args=(world_size, args), nprocs=world_size))
+    else:
+        main(
+            rank=0 if world_size >= 1 else torch.device("cpu"),
+            world_size=1,
+            args=args,
+        )
