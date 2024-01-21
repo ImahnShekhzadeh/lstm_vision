@@ -342,7 +342,7 @@ def train_and_validate(
             optimizer.zero_grad()
 
             with autocast(
-                device_type=device.type,
+                device_type=labels.device.type,
                 dtype=torch.float16,
                 enabled=use_amp,
             ):
@@ -387,7 +387,7 @@ def train_and_validate(
                 val_labels = val_labels.to(device)
 
                 with autocast(
-                    device_type=device.type,
+                    device_type=val_labels.device.type,
                     dtype=torch.float16,
                     enabled=use_amp,
                 ):
