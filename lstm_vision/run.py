@@ -177,7 +177,7 @@ if __name__ == "__main__":
         print(f"\nGPU(s): {list_gpus}\n")
 
     if args.use_ddp and world_size > 1:
-        mp.spawn(main(args=(world_size, args)), nprocs=world_size)
+        mp.spawn(main, args=(world_size, args), nprocs=world_size)
     else:
         main(
             rank=0 if world_size >= 1 else torch.device("cpu"),
