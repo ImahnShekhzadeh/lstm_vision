@@ -131,4 +131,9 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Whether to use automatic mixed precision (AMP).",
     )
+    parser.add_argument(
+        "--use_ddp",
+        action="store_true",
+        help="Whether to use distributed data parallel (DDP).",
+    )
     return parser

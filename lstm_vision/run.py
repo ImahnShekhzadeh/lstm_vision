@@ -32,13 +32,27 @@ def main() -> None:
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
-    # Set device and get gpu id if available:
-    use_gpu = torch.cuda.is_available()
+    # Set device, get gpu, check number of available gpus
+    # and whether DDP is supposed to be used:
+    num_gpus = torch.cuda.device_count()
+    use_gpu = num_gpus >= 1
     device = torch.device("cuda:0" if use_gpu else "cpu")
     gpu_id = None
+
     if use_gpu:
         gpu_id = torch.cuda.current_device()
-        print(f"GPU: {torch.cuda.get_device_name(0)}")
+        list_gpus = [torch.cuda.get_device_name(i) for i in range(num_gpus)]
+        print(f"\nGPU(s): {list_gpus}\n")
+
+    if args.use_ddp:
+        if num_gpus > 1:
+            print("Using DistributedDataParallel.")
+        else:
+            args.use_ddp = False
+            print(
+                "DistributedDataParallel not used, since two or more GPUs are "
+                "NOT available."
+            )
 
     # get dataloaders
     train_loader, val_loader, test_loader = get_dataloaders(
@@ -61,6 +75,7 @@ def main() -> None:
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
+        use_ddp=args.use_ddp,
         gpu_id=gpu_id,
     )
 
