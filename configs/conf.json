@@ -1,0 +1,13 @@
+{
+    "batch_size": 8192,
+    "bidirectional": true,
+    "dropout_rate": 0.2,
+    "freq_output__train": 1,
+    "freq_output__val": 1,
+    "learning_rate": 1e-3,
+    "num_epochs": 15,
+    "num_workers": 4,
+    "seed_number": 0,
+    "pin_memory": true,
+    "use_amp": true
+}

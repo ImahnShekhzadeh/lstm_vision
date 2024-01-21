@@ -1,6 +1,7 @@
-import argparse
 import gc
+import json
 import os
+from argparse import ArgumentParser, Namespace
 from copy import deepcopy
 from datetime import datetime as dt
 from time import perf_counter
@@ -11,6 +12,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import torch
 from prettytable import PrettyTable
+from termcolor import colored
 from torch import Tensor, autocast, nn
 from torch.cuda.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
@@ -37,7 +39,54 @@ def total_norm__grads(model: nn.Module):
     return total_norm
 
 
-def check_args(args: argparse.Namespace) -> None:
+def retrieve_args(parser: ArgumentParser) -> Namespace:
+    """
+    Retrieve and parse the args; some args might have been passed in a JSON
+    config file.
+
+    Returns:
+        Argparse options.
+    """
+    args = parser.parse_args()
+
+    if args.config is not None:
+        if os.path.exists(args.config):
+            assert args.config.endswith(".json"), (
+                f"Config file should be a JSON file, but is a '{args.config}' "
+                "file."
+            )
+            with open(args.config, "r") as f:
+                config_args = json.load(f)  # type: dict
+
+            # List all registered arguments
+            registered_args = {action.dest for action in parser._actions}
+
+            # Check if all config keys are known to the parser
+            unknown_args = set(config_args) - registered_args
+
+            # Check for unknown arguments
+            if unknown_args:
+                raise ValueError(
+                    f"Unknown argument(s) in JSON config: {unknown_args}"
+                )
+
+            parser.set_defaults(**config_args)
+            args = parser.parse_args()
+            print(
+                colored(
+                    f"Config file '{args.config}' found and loaded.\n\n",
+                    color="green",
+                )
+            )
+        else:
+            raise ValueError(f"Config file '{args.config}' not found.")
+
+    check_and_print_args(args)
+
+    return args
+
+
+def check_and_print_args(args: Namespace) -> None:
     """
     Check provided arguments and print them to CLI.
 
@@ -59,9 +108,9 @@ def check_args(args: argparse.Namespace) -> None:
             "https://stackoverflow.com/questions/55563376/pytorch-how"
             "-does-pin-memory-work-in-dataloader"
         )
-    assert 0 < args.dropout_rate < 1, (
-        "``dropout_rate`` should be chosen between 0 and 1, "
-        f"but is {args.dropout_rate}."
+    assert 0 <= args.dropout_rate < 1, (
+        "``dropout_rate`` should be chosen between 0 (inclusive) and 1 "
+        f"(exclusive), but is {args.dropout_rate}."
     )
     assert 0 < args.train_split < 1, (
         "``train_split`` should be chosen between 0 and 1, "

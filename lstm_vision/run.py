@@ -6,7 +6,6 @@ from math import ceil
 import torch
 from functions import (
     check_accuracy,
-    check_args,
     count_parameters,
     end_timer_and_print,
     get_dataloaders,
@@ -14,20 +13,20 @@ from functions import (
     produce_acc_plot,
     produce_and_print_confusion_matrix,
     produce_loss_plot,
+    retrieve_args,
     save_checkpoint,
     train_and_validate,
 )
 from LSTM_model import LSTM
 from torch import optim
 from torchinfo import summary
-from train_options import TrainOptions
+from train_options import get_parser
 
 
 def main() -> None:
     """Main function."""
-    args = TrainOptions().args
-
-    check_args(args)
+    parser = get_parser()
+    args = retrieve_args(parser)
 
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
