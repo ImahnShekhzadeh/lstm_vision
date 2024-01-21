@@ -61,12 +61,14 @@ def main() -> None:
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
+        use_ddp=args.use_ddp,
     )
 
     # define sequence length and input size of LSTM based on input data
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
 
+    # get model and print summary
     model = get_model(
         input_size=inp_size,
         num_layers=args.num_layers,
@@ -78,8 +80,6 @@ def main() -> None:
         use_ddp=args.use_ddp,
         gpu_id=gpu_id,
     )
-
-    # print model summary
     summary(model, (args.batch_size, seq_length, inp_size))
 
     # compile model if specified
@@ -155,7 +155,7 @@ def main() -> None:
     check_accuracy(train_loader, model, mode="train", device=device)
     check_accuracy(test_loader, model, mode="test", device=device)
     produce_and_print_confusion_matrix(
-        len(test_loader.dataset.classes),
+        len(test_loader.dataset.classes),  # TODO: write `num_clases` instead
         test_loader,
         model,
         args.saving_path,

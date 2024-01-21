@@ -21,7 +21,7 @@ from torch import nn
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.utils import clip_grad_norm_
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, DistributedSampler, random_split
 from torchvision import datasets, transforms
 
 
@@ -204,15 +204,21 @@ def get_dataloaders(
     batch_size: int,
     num_workers: int,
     pin_memory: bool,
+    use_ddp: bool = False,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """
     Get the dataloaders for the train, validation and test set.
 
     Args:
+        channels_img: Number of channels in the input images.
         train_split: Percentage of the training set to use for training.
-        batch_size (int): Batch size.
-        num_workers (int): Number of subprocesses used in the dataloaders.
-        pin_memory (bool): Whether tensors are copied into CUDA pinned memory.
+        batch_size: Batch size.
+        num_workers: Number of subprocesses used in the dataloaders.
+        pin_memory: Whether tensors are copied into CUDA pinned memory.
+        use_ddp: Whether to use DDP.
+
+    Returns:
+        Train, val and test loader
     """
 
     # define data transformation:
@@ -256,20 +262,23 @@ def get_dataloaders(
 
     loader_kwargs = {
         "batch_size": batch_size,
-        "shuffle": True,
+        "shuffle": False if use_ddp else True,
         "num_workers": num_workers,
         "pin_memory": pin_memory,
     }
     train_loader = DataLoader(
         dataset=train_subset,
+        sampler=DistributedSampler(train_subset) if use_ddp else None,
         **loader_kwargs,
     )
     val_loader = DataLoader(
         dataset=val_subset,
+        sampler=DistributedSampler(val_subset) if use_ddp else None,
         **loader_kwargs,
     )
     test_loader = DataLoader(
         dataset=test_dataset,
+        sampler=DistributedSampler(test_dataset) if use_ddp else None,
         **loader_kwargs,
     )
 
