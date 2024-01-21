@@ -11,10 +11,15 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import torch
+from LSTM_model import LSTM
 from prettytable import PrettyTable
 from termcolor import colored
-from torch import Tensor, autocast, nn
+from torch import Tensor, autocast
+from torch import distributed as dist
+from torch import multiprocessing as mp
+from torch import nn
 from torch.cuda.amp import GradScaler
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
@@ -37,6 +42,80 @@ def total_norm__grads(model: nn.Module):
     total_norm = total_norm**0.5
 
     return total_norm
+
+
+def cleanup():
+    """
+    Cleanup the distributed environment.
+    """
+    dist.destroy_process_group()
+
+
+def setup(rank: int, world_size: int, backend: str = "nccl"):
+    """
+    Initialize the distributed environment.
+
+    Args:
+        rank: Rank of the current process.
+        world_size: Number of processes participating in the job.
+        backend: Backend to use.
+    """
+
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "12355"
+
+    # initialize the process group
+    dist.init_process_group(
+        backend=backend,
+        rank=rank,
+        world_size=world_size,
+    )
+
+
+def get_model(
+    input_size: int,
+    num_layers: int,
+    hidden_size: int,
+    num_classes: int,
+    sequence_length: int,
+    bidirectional: bool,
+    dropout_rate: float,
+    use_ddp: bool = False,
+    gpu_id: Optional[int] = None,
+) -> nn.Module:
+    """
+
+    Args:
+        input_size: input is assumed to be in shape `(N, 1, H, W)`,
+            where `W` is the input size
+        num_layers: number of hidden layers for the NN
+        hidden_size: number of features in hidden state `h`
+        num_classes: number of classes our LSTM is supposed to predict,
+            `10` for MNIST
+        sequence_length: input is of shape `(N, sequence_length, input_size)`
+        bidirectional: if `True`, use bidirectional LSTM
+        dropout_rate: dropout rate for the dropout layer
+        gpu_id: GPU ID to use. If ``None``, CPU is used.
+    """
+
+    # define model
+    model = LSTM(
+        input_size=input_size,
+        num_layers=num_layers,
+        hidden_size=hidden_size,
+        num_classes=num_classes,
+        sequence_length=sequence_length,
+        bidirectional=bidirectional,
+        dropout_rate=dropout_rate,
+    )
+    if gpu_id is not None:
+        model.to(gpu_id)
+
+    if use_ddp:
+        assert gpu_id is not None, "GPU ID must be specified when using DDP."
+        model = DDP(model, device_ids=[gpu_id])
+
+    return model
 
 
 def retrieve_args(parser: ArgumentParser) -> Namespace:

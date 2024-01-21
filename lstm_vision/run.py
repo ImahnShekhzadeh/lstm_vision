@@ -9,6 +9,7 @@ from functions import (
     count_parameters,
     end_timer_and_print,
     get_dataloaders,
+    get_model,
     load_checkpoint,
     produce_acc_plot,
     produce_and_print_confusion_matrix,
@@ -31,9 +32,12 @@ def main() -> None:
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
-    # Set device:
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.is_available():
+    # Set device and get gpu id if available:
+    use_gpu = torch.cuda.is_available()
+    device = torch.device("cuda:0" if use_gpu else "cpu")
+    gpu_id = None
+    if use_gpu:
+        gpu_id = torch.cuda.current_device()
         print(f"GPU: {torch.cuda.get_device_name(0)}")
 
     # get dataloaders
@@ -49,8 +53,7 @@ def main() -> None:
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
 
-    # define model
-    model = LSTM(
+    model = get_model(
         input_size=inp_size,
         num_layers=args.num_layers,
         hidden_size=args.hidden_size,
@@ -58,7 +61,8 @@ def main() -> None:
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
-    ).to(device)
+        gpu_id=gpu_id,
+    )
 
     # print model summary
     summary(model, (args.batch_size, seq_length, inp_size))
