@@ -335,7 +335,7 @@ def train_and_validate(
     scaler = GradScaler(enabled=use_amp)
 
     for epoch in range(num_epochs):
-        t0 = perf_counter()  # TODO: use `start_timer()` instead
+        t0 = start_timer(device=device)
         trainingLoss_perEpoch, valLoss_perEpoch = [], []
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
