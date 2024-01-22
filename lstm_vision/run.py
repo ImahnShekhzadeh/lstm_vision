@@ -156,8 +156,9 @@ def main(
     load_checkpoint(model=model, checkpoint=checkpoint)
     check_accuracy(train_loader, model, mode="train", device=rank)
     check_accuracy(test_loader, model, mode="test", device=rank)
+    # TODO: write `num_clases` instead (already in L73)
     produce_and_print_confusion_matrix(
-        len(test_loader.dataset.classes),  # TODO: write `num_clases` instead
+        len(test_loader.dataset.classes),
         test_loader,
         model,
         args.saving_path,
@@ -177,6 +178,10 @@ if __name__ == "__main__":
         print(f"\nGPU(s): {list_gpus}\n")
 
     if args.use_ddp and world_size > 1:
+        # When using a single GPU per process and per
+        # DistributedDataParallel, we need to divide the batch size
+        # ourselves based on the total number of GPUs of the current node.
+        args.batch_size = int(args.batch_size / world_size)
         mp.spawn(main, args=(world_size, args), nprocs=world_size)
     else:
         main(
