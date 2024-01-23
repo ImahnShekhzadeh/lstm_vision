@@ -516,7 +516,8 @@ def end_timer_and_print(
     if device.type == "cuda":
         msg += (
             f"\n\tMax memory used by tensors = "
-            f"{torch.cuda.max_memory_allocated() / 1024**2:.3f} [MB]"
+            f"{torch.cuda.max_memory_allocated(device=device) / 1024**2:.3f} "
+            "[MB]"
         )
     print(msg)
 
