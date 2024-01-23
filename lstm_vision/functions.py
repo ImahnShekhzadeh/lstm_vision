@@ -61,7 +61,7 @@ def setup(rank: int, world_size: int, backend: str = "nccl"):
         backend: Backend to use.
     """
 
-    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_ADDR"] = "localhost"  # NOTE: might have to be adjusted
     os.environ["MASTER_PORT"] = "12355"
 
     # initialize the process group

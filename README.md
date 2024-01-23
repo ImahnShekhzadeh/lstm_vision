@@ -62,7 +62,20 @@ docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm_vision
 ```
 The options for training I used are under `run_scripts.sh`.
 
+You can also easily specify a [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) setup by passing the flag `--use_ddp` in the `configs/conf.json` file (for this, ensure you have more than one NVIDIA GPU). Note that if running this on the [runpod.io](https://www.runpod.io/), you need to change the line
+```python
+os.environ["MASTER_ADDR"] = "localhost"
+```
+in the `setup()` function `functions.py` to
+```python
+os.environ["MASTER_ADDR"] = "<ip_address>"  
+# os.environ["MASTER_ADDR"] = "192.xxx.xx.x"
+```
+where `ip_address` can be obtained via `hostname -I`.
+
 ## Results
+
+All results were obtained on a single GPU. For this small model, I do not recommend a DDP setup.
 
 Training a bidirectional LSTM with roughly `3.9`M params for `15` epochs results in,
 ```
