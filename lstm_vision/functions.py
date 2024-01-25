@@ -372,15 +372,16 @@ def train_and_validate(
                 num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
 
-            print__batch_info(
-                batch_idx=batch_idx,
-                loader=train_loader,
-                epoch=epoch,
-                t_0=t0,
-                loss=loss,
-                mode="train",
-                frequency=freq_output__train,
-            )
+            if rank in [0, torch.device("cpu")]:
+                print__batch_info(
+                    batch_idx=batch_idx,
+                    loader=train_loader,
+                    epoch=epoch,
+                    t_0=t0,
+                    loss=loss,
+                    mode="train",
+                    frequency=freq_output__train,
+                )
 
         # validation stuff:
         with torch.no_grad():
@@ -414,15 +415,16 @@ def train_and_validate(
                 batch_size = val_output.shape[0]
                 val_num_samples += batch_size
 
-                print__batch_info(
-                    batch_idx=val_batch_idx,
-                    loader=val_loader,
-                    epoch=epoch,
-                    t_0=t0,
-                    loss=cce_mean(val_output, val_labels).cpu().item(),
-                    mode="val",
-                    frequency=freq_output__val,
-                )
+                if rank in [0, torch.device("cpu")]:
+                    print__batch_info(
+                        batch_idx=val_batch_idx,
+                        loader=val_loader,
+                        epoch=epoch,
+                        t_0=t0,
+                        loss=cce_mean(val_output, val_labels).cpu().item(),
+                        mode="val",
+                        frequency=freq_output__val,
+                    )
 
         train_losses.append(
             np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
