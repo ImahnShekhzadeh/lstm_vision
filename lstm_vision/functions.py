@@ -299,6 +299,7 @@ def train_and_validate(
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
+    world_size: Optional[int] = None,
 ) -> tuple[dict[torch.Tensor, torch.Tensor], list, list, list, list]:
     """
     Train and validate the model.
@@ -314,6 +315,8 @@ def train_and_validate(
         freq_output__train: Frequency at which to print the training info.
         freq_output__val: Frequency at which to print the validation info.
         max_norm: Maximum norm of the gradients.
+        world_size: Number of processes participating in the job. Used to get
+            the number of iterations correctly in a DDP setup.
 
     Returns:
         checkpoint: Checkpoint of the model.
@@ -445,9 +448,20 @@ def train_and_validate(
         )
         model.train()
 
-    num_iters = (
-        ceil(len(train_loader.dataset) / train_loader.batch_size) * num_epochs
-    )
+    if world_size is not None:
+        num_iters = (
+            ceil(
+                len(train_loader.dataset)
+                / (world_size * train_loader.batch_size)
+            )
+            * num_epochs
+        )
+    else:
+        num_iters = (
+            ceil(len(train_loader.dataset) / train_loader.batch_size)
+            * num_epochs
+        )
+
     end_timer_and_print(
         start_time=start_time,
         device=rank,
