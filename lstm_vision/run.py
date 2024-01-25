@@ -126,7 +126,8 @@ def main(
     if args.num_epochs > 1:
         epoch_str += "s"
     num_iters = (
-        ceil(len(train_loader.dataset) / args.batch_size) * args.num_epochs
+        ceil(len(train_loader.dataset) / train_loader.batch_size)
+        * args.num_epochs
     )
     end_timer_and_print(
         start_time=start_time,
