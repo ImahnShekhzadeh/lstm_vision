@@ -113,7 +113,7 @@ def main(
         model=model,
         optimizer=optimizer,
         num_epochs=args.num_epochs,
-        device=rank,
+        rank=rank,
         use_amp=args.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,

@@ -292,7 +292,7 @@ def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     num_epochs: int,
-    device: int | torch.device,
+    rank: int | torch.device,
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
@@ -307,7 +307,7 @@ def train_and_validate(
         model: Model to train.
         optimizer: Optimizer to use.
         num_epochs: Number of epochs to train the model.
-        device: Device on which the code is executed.
+        rank: Device on which the code is executed.
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
@@ -328,20 +328,20 @@ def train_and_validate(
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
     cce_sum = nn.CrossEntropyLoss(reduction="sum")
 
-    start_time = start_timer(device=device)
+    start_time = start_timer(device=rank)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
     scaler = GradScaler(enabled=use_amp)
 
     for epoch in range(num_epochs):
-        t0 = start_timer(device=device)
+        t0 = start_timer(device=rank)
         trainingLoss_perEpoch, valLoss_perEpoch = [], []
         num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
         for batch_idx, (images, labels) in enumerate(train_loader):
             model.train()
-            labels = labels.to(device)
+            labels = labels.to(rank)
             optimizer.zero_grad()
 
             with autocast(
@@ -349,7 +349,7 @@ def train_and_validate(
                 dtype=torch.float16,
                 enabled=use_amp,
             ):
-                output = model(images.squeeze_(dim=1).to(device))  # `(N, 10)`
+                output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
                 loss = cce_mean(output, labels)
 
             scaler.scale(loss).backward()
@@ -387,7 +387,7 @@ def train_and_validate(
             for val_batch_idx, (val_images, val_labels) in enumerate(
                 val_loader
             ):
-                val_labels = val_labels.to(device)
+                val_labels = val_labels.to(rank)
 
                 with autocast(
                     device_type=val_labels.device.type,
@@ -395,7 +395,7 @@ def train_and_validate(
                     enabled=use_amp,
                 ):
                     val_output = model(
-                        val_images.squeeze_(dim=1).to(device)
+                        val_images.squeeze_(dim=1).to(rank)
                     )  # `[N, C]`
                     val_loss = cce_sum(val_output, val_labels).cpu().item()
 
