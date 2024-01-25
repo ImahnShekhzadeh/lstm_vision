@@ -560,7 +560,6 @@ def format_line(
     total_samples: int,
     percentage: float,
     loss: Tensor,
-    runtime: float,
 ) -> None:
     assert mode.lower() in ["train", "val"]
 
@@ -576,10 +575,9 @@ def format_line(
     sample_info_str = f"[{padded__current_sample} / {total_samples} ({percentage:06.2f} %)]".ljust(
         max_sample_info_width
     )
-    loss_str = f"{mode.capitalize()} loss: {loss:.4f}"
-    runtime_str = f"Runtime: {runtime:.3f} s"
+    loss_str = f"Loss: {loss:.4f}"
 
-    return f"{epoch_str}  {sample_info_str}  {loss_str}  {runtime_str}"
+    return f"{epoch_str}  {sample_info_str}  {loss_str}"
 
 
 def print__batch_info(
@@ -614,7 +612,6 @@ def print__batch_info(
 
         total_samples = len(loader.dataset)
         prog_perc = 100 * current_samples / total_samples
-        runtime = perf_counter() - t_0
 
         formatted_line = format_line(
             mode=mode,
@@ -623,7 +620,6 @@ def print__batch_info(
             total_samples=total_samples,
             percentage=prog_perc,
             loss=loss,
-            runtime=runtime,
         )
         print(f"{formatted_line}")
 
