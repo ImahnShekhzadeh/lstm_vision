@@ -440,12 +440,14 @@ def train_and_validate(
         # Calculate accuracies for each epoch:
         train_accs.append(num_correct / num_samples)
         val_accs.append(val_num_correct / val_num_samples)
-        print(
-            f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
-            f"Mean train/val loss: {train_losses[epoch]:.4f}/"
-            f"{val_losses[epoch]:.4f}\tTrain/val acc: "
-            f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
-        )
+
+        if rank in [0, torch.device("cpu")]:
+            print(
+                f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
+                f"Mean train/val loss: {train_losses[epoch]:.4f}/"
+                f"{val_losses[epoch]:.4f}\tTrain/val acc: "
+                f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
+            )
         model.train()
 
     if world_size is not None:
@@ -462,11 +464,14 @@ def train_and_validate(
             * num_epochs
         )
 
-    end_timer_and_print(
-        start_time=start_time,
-        device=rank,
-        local_msg=(f"Training {num_epochs} epochs ({num_iters} iterations)"),
-    )
+    if rank in [0, torch.device("cpu")]:
+        end_timer_and_print(
+            start_time=start_time,
+            device=rank,
+            local_msg=(
+                f"Training {num_epochs} epochs ({num_iters} iterations)"
+            ),
+        )
 
     return (
         checkpoint,
