@@ -282,7 +282,6 @@ def get_dataloaders(
     )
     test_loader = DataLoader(
         dataset=test_dataset,
-        sampler=DistributedSampler(test_dataset) if use_ddp else None,
         **loader_kwargs,
     )
 
