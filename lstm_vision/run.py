@@ -118,14 +118,15 @@ def main(
         world_size=world_size,
     )
 
-    # TODO: fix when using DDP
-    save_checkpoint(
-        state=checkpoint,
-        filename=os.path.join(
-            args.saving_path,
-            f"lstm_cp_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
-        ),
-    )
+    if rank in [0, torch.device("cpu")]:
+        # save model and optimizer state dicts
+        save_checkpoint(
+            state=checkpoint,
+            filename=os.path.join(
+                args.saving_path,
+                f"lstm_cp_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
+            ),
+        )
 
     # destroy process group if DDP was used (for clean exit)
     if args.use_ddp:
