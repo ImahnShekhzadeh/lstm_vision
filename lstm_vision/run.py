@@ -29,7 +29,7 @@ from train_options import get_parser
 
 
 def main(
-    rank: int,
+    rank: int | torch.device,
     world_size: int,
     args: Namespace,
 ) -> None:
@@ -37,9 +37,9 @@ def main(
     Main function.
 
     Args:
-        args: command line arguments
         rank: rank of the current process
         world_size: number of processes
+        args: command line arguments
     """
 
     if args.seed_number is not None:
@@ -77,7 +77,8 @@ def main(
         device=rank,
         use_ddp=args.use_ddp,
     )
-    summary(model, (args.batch_size, seq_length, inp_size))
+    if rank in [0, torch.device("cpu")]:
+        summary(model, (args.batch_size, seq_length, inp_size))
 
     # compile model if specified
     if args.compile_mode is not None:
@@ -146,24 +147,27 @@ def main(
     if args.use_ddp:
         cleanup()
 
-    count_parameters(model)  # TODO: rename, misleadig name
-    produce_loss_plot(
-        args.num_epochs, train_losses, val_losses, args.saving_path
-    )
-    produce_acc_plot(args.num_epochs, train_accs, val_accs, args.saving_path)
+    if rank in [0, torch.device("cpu")]:
+        count_parameters(model)  # TODO: rename, misleadig name
+        produce_loss_plot(
+            args.num_epochs, train_losses, val_losses, args.saving_path
+        )
+        produce_acc_plot(
+            args.num_epochs, train_accs, val_accs, args.saving_path
+        )
 
-    # check accuracy on train and test set and produce confusion matrix
-    load_checkpoint(model=model, checkpoint=checkpoint)
-    check_accuracy(train_loader, model, mode="train", device=rank)
-    check_accuracy(test_loader, model, mode="test", device=rank)
-    # TODO: write `num_clases` instead (already in L73)
-    produce_and_print_confusion_matrix(
-        len(test_loader.dataset.classes),
-        test_loader,
-        model,
-        args.saving_path,
-        rank,
-    )
+        # check accuracy on train and test set and produce confusion matrix
+        load_checkpoint(model=model, checkpoint=checkpoint)
+        check_accuracy(train_loader, model, mode="train", device=rank)
+        check_accuracy(test_loader, model, mode="test", device=rank)
+        # TODO: write `num_clases` instead (already in L73)
+        produce_and_print_confusion_matrix(
+            len(test_loader.dataset.classes),
+            test_loader,
+            model,
+            args.saving_path,
+            rank,
+        )
 
 
 if __name__ == "__main__":

@@ -292,7 +292,7 @@ def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     num_epochs: int,
-    device: torch.device,
+    device: int | torch.device,
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
