@@ -1,16 +1,12 @@
 import os
-import sys
 from argparse import Namespace
 from datetime import datetime as dt
-from math import ceil
-from typing import Optional
 
 import torch
 from functions import (
     check_accuracy,
     cleanup,
     count_parameters,
-    end_timer_and_print,
     get_dataloaders,
     get_model,
     load_checkpoint,
@@ -103,7 +99,6 @@ def main(
 
     # Train the network:
     (
-        start_time,
         checkpoint,
         train_losses,
         val_losses,
@@ -122,20 +117,7 @@ def main(
         max_norm=args.max_norm,
     )
 
-    epoch_str = "epoch"
-    if args.num_epochs > 1:
-        epoch_str += "s"
-    num_iters = (
-        ceil(len(train_loader.dataset) / train_loader.batch_size)
-        * args.num_epochs
-    )
-    end_timer_and_print(
-        start_time=start_time,
-        device=rank,
-        local_msg=(
-            f"Training {args.num_epochs} {epoch_str} ({num_iters} iterations)"
-        ),
-    )
+    # TODO: fix when using DDP
     save_checkpoint(
         state=checkpoint,
         filename=os.path.join(
@@ -189,6 +171,7 @@ if __name__ == "__main__":
         args.batch_size = int(args.batch_size / world_size)
         mp.spawn(main, args=(world_size, args), nprocs=world_size)
     else:
+        args.use_ddp = False
         main(
             rank=0 if world_size >= 1 else torch.device("cpu"),
             world_size=1,

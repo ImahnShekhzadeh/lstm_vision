@@ -4,6 +4,7 @@ import os
 from argparse import ArgumentParser, Namespace
 from copy import deepcopy
 from datetime import datetime as dt
+from math import ceil
 from time import perf_counter
 from typing import Optional
 
@@ -299,7 +300,7 @@ def train_and_validate(
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
-) -> tuple[float, dict[torch.Tensor, torch.Tensor], list, list, list, list]:
+) -> tuple[dict[torch.Tensor, torch.Tensor], list, list, list, list]:
     """
     Train and validate the model.
 
@@ -316,7 +317,6 @@ def train_and_validate(
         max_norm: Maximum norm of the gradients.
 
     Returns:
-        start_time: Time at which the training started.
         checkpoint: Checkpoint of the model.
         train_losses: Training losses per epoch.
         val_losses: Validation losses per epoch.
@@ -446,8 +446,16 @@ def train_and_validate(
         )
         model.train()
 
+    num_iters = (
+        ceil(len(train_loader.dataset) / train_loader.batch_size) * num_epochs
+    )
+    end_timer_and_print(
+        start_time=start_time,
+        device=rank,
+        local_msg=(f"Training {num_epochs} epochs ({num_iters} iterations)"),
+    )
+
     return (
-        start_time,
         checkpoint,
         train_losses,
         val_losses,
@@ -488,7 +496,8 @@ def end_timer_and_print(
     start_time: float, device: torch.device | int, local_msg: str = ""
 ) -> float:
     """
-    End the timer and print the time it took to execute the code.
+    End the timer and print the time it took to execute the code as well as the
+    maximum memory used by tensors.
 
     Args:
         start_time: Time at which the training started.
