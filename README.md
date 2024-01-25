@@ -60,6 +60,10 @@ I ran the script `run.py` as follows:
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
 docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm_vision:/app/scripts -v $(pwd)/configs:/app/configs --gpus all -it lstm-vision:1.2.0 --config configs/conf.json
 ```
+If you prefer the output of the script `run.py` to be stored in a separate file and you are in a UNIX-based environment, you can append the following to the `docker run [...]` command:
+```
+docker run [...] > "outputs/output_$(date +%dp%mp%y-%Hp%Mp%S).log"
+```
 The options for training I used are under `run_scripts.sh`.
 
 You can also easily specify a [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) setup by passing the flag `--use_ddp` in the `configs/conf.json` file (for this, ensure you have more than one NVIDIA GPU). Note that if running this on the [runpod.io](https://www.runpod.io/), you need to change the line
