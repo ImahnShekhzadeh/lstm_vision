@@ -12,55 +12,50 @@ class LSTM(nn.Module):
 
     def __init__(
         self,
-        input_size,
-        num_layers,
-        hidden_size,
-        num_classes,
-        sequence_length,
-        bidirectional,
-        dropout_rate,
+        input_size: int,
+        sequence_length: int,
+        num_layers: int,
+        hidden_size: int,
+        num_classes: int,
+        bidirectional: bool,
+        dropout_rate: float,
     ):
         """
         Args:
             input_size: input is assumed to be in shape `(N, 1, H, W)`,
                 where `W` is the input size
+            sequence_length: input is of shape
+                `(N, sequence_length, input_size)`
             num_layers: number of hidden layers for the NN
             hidden_size: number of features in hidden state `h`
             num_classes: number of classes our LSTM is supposed to predict,
                 `10` for MNIST
-            sequence_length: input is of shape
-                `(N, sequence_length, input_size)`
             bidirectional: if `True`, use bidirectional LSTM
             dropout_rate: dropout rate for the dropout layer
         """
-        super(LSTM, self).__init__()
-        self.input_size = input_size
+        super().__init__()
         self.num_layers = num_layers
         self.hidden_size = hidden_size
-        self.num_classes = num_classes
-        self.sequence_length = sequence_length
-        self.bidirectional = bidirectional
-        self.dropout_rate = dropout_rate
 
-        if self.bidirectional == True:
+        if bidirectional == True:
             self.num_directions = 2
         else:
             self.num_directions = 1
 
         self.LSTM = nn.LSTM(
-            input_size=self.input_size,
+            input_size=input_size,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             batch_first=True,
             dropout=0,
-            bidirectional=self.bidirectional,
+            bidirectional=bidirectional,
         )
-        self.dropout = nn.Dropout(p=self.dropout_rate, inplace=False)
+        self.dropout = nn.Dropout(p=dropout_rate, inplace=False)
         self.fc = nn.Linear(
             in_features=self.num_directions
             * self.hidden_size
-            * self.sequence_length,
-            out_features=self.num_classes,
+            * sequence_length,
+            out_features=num_classes,
         )
 
     def forward(self, x):

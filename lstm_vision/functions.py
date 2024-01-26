@@ -107,10 +107,10 @@ def get_model(
     # define model
     model = LSTM(
         input_size=input_size,
+        sequence_length=sequence_length,
         num_layers=num_layers,
         hidden_size=hidden_size,
         num_classes=num_classes,
-        sequence_length=sequence_length,
         bidirectional=bidirectional,
         dropout_rate=dropout_rate,
     )
