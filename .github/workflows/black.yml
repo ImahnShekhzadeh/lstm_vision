@@ -1,19 +1,19 @@
 name: Run black
 
-on: 
+on:
   - fork
   - pull_request
   - push
 
-jobs: 
-  formatting: 
-    runs-on: ubuntu-22.04 
-    steps: 
+jobs:
+  formatting:
+    runs-on: ubuntu-22.04
+    steps:
     - uses: actions/checkout@v3
-      with: 
+      with:
         lfs: true  # large file storage
     - uses: psf/black@stable
-      with: 
+      with:
         options: "--check --verbose"
         jupyter: false
         version: "~=23.10.1"

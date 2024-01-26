@@ -3,7 +3,7 @@ Repository containing PyTorch code to train an LSTM on a CV dataset, e.g. MNIST.
 
 The code can be run both with [AMP](https://pytorch.org/docs/stable/amp.html) (automatic mixed precision) enabled and `torch.compile()`.
 
-Note that this repository is more for showing that LSTMs can also be used to do image classification. To use the right inductive bias, a CNN/ResNet/DenseNet/etc. should be preferred, since an LSTM treats the image sequentially, i.e. pixel by pixel. 
+Note that this repository is more for showing that LSTMs can also be used to do image classification. To use the right inductive bias, a CNN/ResNet/DenseNet/etc. should be preferred, since an LSTM treats the image sequentially, i.e. pixel by pixel.
 
 ## Options
 
@@ -72,7 +72,7 @@ os.environ["MASTER_ADDR"] = "localhost"
 ```
 in the `setup()` function `functions.py` to
 ```python
-os.environ["MASTER_ADDR"] = "<ip_address>"  
+os.environ["MASTER_ADDR"] = "<ip_address>"
 # os.environ["MASTER_ADDR"] = "192.xxx.xx.x"
 ```
 where `ip_address` can be obtained via `hostname -I`.
