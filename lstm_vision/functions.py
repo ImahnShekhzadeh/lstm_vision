@@ -259,10 +259,6 @@ def get_dataloaders(
         target_transform=None,
         download=True,
     )
-    print(
-        f"# Train:val:test samples: {len(train_subset)}:{len(val_subset)}:"
-        f"{len(test_dataset)} "
-    )
 
     loader_kwargs = {
         "batch_size": batch_size,

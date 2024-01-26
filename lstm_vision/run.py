@@ -74,6 +74,10 @@ def main(
         use_ddp=args.use_ddp,
     )
     if rank in [0, torch.device("cpu")]:
+        print(
+            f"# Train:val:test samples: {len(train_loader.dataset)}"
+            f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n"
+        )
         summary(model, (args.batch_size, seq_length, inp_size))
 
     # compile model if specified
