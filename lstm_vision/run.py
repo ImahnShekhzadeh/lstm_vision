@@ -3,7 +3,11 @@ from argparse import Namespace
 from datetime import datetime as dt
 
 import torch
-from functions import (
+from torch import multiprocessing as mp
+from torch import optim
+from torchinfo import summary
+from train_options import get_parser
+from utils import (
     check_accuracy,
     cleanup,
     count_parameters,
@@ -18,10 +22,6 @@ from functions import (
     setup,
     train_and_validate,
 )
-from torch import multiprocessing as mp
-from torch import optim
-from torchinfo import summary
-from train_options import get_parser
 
 
 def main(
