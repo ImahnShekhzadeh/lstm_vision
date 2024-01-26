@@ -18,6 +18,7 @@ dependencies = [
     "prettytable~=3.9",
     "python-dotenv~=1.0",
     "matplotlib~=3.2",
+    "pre-commit",
 ]
 
 [tool.isort]
