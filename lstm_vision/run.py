@@ -110,13 +110,7 @@ def main(
         )
 
     # Train the network:
-    (
-        checkpoint,
-        train_losses,
-        val_losses,
-        train_accs,
-        val_accs,
-    ) = train_and_validate(
+    checkpoint = train_and_validate(
         model=model,
         optimizer=optimizer,
         num_epochs=args.num_epochs,

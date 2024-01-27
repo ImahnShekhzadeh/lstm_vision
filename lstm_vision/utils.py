@@ -6,10 +6,9 @@ from copy import deepcopy
 from datetime import datetime as dt
 from math import ceil
 from time import perf_counter
-from typing import Optional
+from typing import Dict, Optional
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 import torch
 import wandb
@@ -298,7 +297,7 @@ def train_and_validate(
     max_norm: Optional[float] = None,
     world_size: Optional[int] = None,
     wandb_logging: bool = False,
-) -> tuple[dict[torch.Tensor, torch.Tensor], list, list, list, list]:
+) -> Dict[torch.Tensor, torch.Tensor]:
     """
     Train and validate the model.
 
@@ -319,10 +318,6 @@ def train_and_validate(
 
     Returns:
         checkpoint: Checkpoint of the model.
-        train_losses: Training losses per epoch.
-        val_losses: Validation losses per epoch.
-        train_accs: Training accuracies per epoch.
-        val_accs: Validation accuracies per epoch.
     """
 
     # define loss functions:
@@ -487,13 +482,7 @@ def train_and_validate(
             ),
         )
 
-    return (
-        checkpoint,
-        train_losses,
-        val_losses,
-        train_accs,
-        val_accs,
-    )
+    return checkpoint
 
 
 def start_timer(device: torch.device | int) -> float:
