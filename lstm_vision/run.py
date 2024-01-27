@@ -105,8 +105,17 @@ def main(
     model.train()
 
     if args.loading_path is not None:
+        if rank == torch.device("cpu"):
+            map_location = {"cuda:0": "cpu"}
+        else:
+            map_location = {"cuda:0": f"cuda:{rank}"}
+
         load_checkpoint(
-            model=model, optimizer=optimizer, checkpoint=args.loading_path
+            model=model,
+            optimizer=optimizer,
+            checkpoint=torch.load(
+                args.loading_path, map_location=map_location
+            ),
         )
 
     # Train the network:

@@ -629,7 +629,7 @@ def load_checkpoint(
     model: nn.Module,
     checkpoint: dict[torch.Tensor, torch.Tensor],
     optimizer: Optional[torch.optim.Optimizer] = None,
-):
+) -> None:
     """Load an existing checkpoint of the model to continue training.
 
     Args:
