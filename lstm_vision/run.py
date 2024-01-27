@@ -56,16 +56,18 @@ def main(
         use_ddp=args.use_ddp,
     )
 
-    # define sequence length and input size of LSTM based on input data
+    # define sequence length, input size of LSTM and number of classes based
+    # on input data
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
+    num_classes = len(test_loader.dataset.classes)
 
     # get model
     model = get_model(
         input_size=inp_size,
         num_layers=args.num_layers,
         hidden_size=args.hidden_size,
-        num_classes=len(test_loader.dataset.classes),
+        num_classes=num_classes,
         sequence_length=seq_length,
         bidirectional=args.bidirectional,
         dropout_rate=args.dropout_rate,
@@ -154,15 +156,17 @@ def main(
 
         count_parameters(model)  # TODO: rename, misleadig name
 
-        # load checkpoint with lowest validation loss for final evaluation
+        # load checkpoint with lowest validation loss for final evaluation;
+        # device does not need to be specified, since the checkpoint will be
+        # loaded on the CPU or GPU with ID 0 depending on where the checkpoint
+        # was saved
         load_checkpoint(model=model, checkpoint=checkpoint)
 
         # check accuracy on train and test set and produce confusion matrix
         check_accuracy(train_loader, model, mode="train", device=rank)
         check_accuracy(test_loader, model, mode="test", device=rank)
-        # TODO: write `num_clases` instead (already in L73)
         produce_and_print_confusion_matrix(
-            len(test_loader.dataset.classes),
+            num_classes,
             test_loader,
             model,
             args.saving_path,
