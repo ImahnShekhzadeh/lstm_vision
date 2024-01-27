@@ -39,11 +39,6 @@ def main(
         args: command line arguments
     """
 
-    wandb_logging = args.wandb__api_key is not None
-    if wandb_logging:
-        wandb.login(key=args.wandb__api_key)
-        wandb.init(project="lstm_vision")
-
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
@@ -67,7 +62,7 @@ def main(
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
 
-    # get model and print summary
+    # get model
     model = get_model(
         input_size=inp_size,
         num_layers=args.num_layers,
@@ -79,12 +74,21 @@ def main(
         device=rank,
         use_ddp=args.use_ddp,
     )
+
+    # setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
+        wandb_logging = args.wandb__api_key is not None
+        if wandb_logging:
+            wandb.login(key=args.wandb__api_key)
+            wandb.init(project="lstm_vision")
+
         print(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n"
         )
         summary(model, (args.batch_size, seq_length, inp_size))
+    else:
+        wandb_logging = False
 
     # compile model if specified
     if args.compile_mode is not None:
@@ -144,6 +148,9 @@ def main(
         cleanup()
 
     if rank in [0, torch.device("cpu")]:
+        if wandb_logging:
+            wandb.finish()
+
         count_parameters(model)  # TODO: rename, misleadig name
         produce_loss_plot(
             args.num_epochs, train_losses, val_losses, args.saving_path

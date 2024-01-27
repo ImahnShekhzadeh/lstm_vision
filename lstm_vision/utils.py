@@ -487,9 +487,6 @@ def train_and_validate(
             ),
         )
 
-    if wandb_logging:
-        wandb.finish()
-
     return (
         checkpoint,
         train_losses,
