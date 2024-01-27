@@ -154,8 +154,10 @@ def main(
 
         count_parameters(model)  # TODO: rename, misleadig name
 
-        # check accuracy on train and test set and produce confusion matrix
+        # load checkpoint with lowest validation loss for final evaluation
         load_checkpoint(model=model, checkpoint=checkpoint)
+
+        # check accuracy on train and test set and produce confusion matrix
         check_accuracy(train_loader, model, mode="train", device=rank)
         check_accuracy(test_loader, model, mode="test", device=rank)
         # TODO: write `num_clases` instead (already in L73)
