@@ -724,64 +724,6 @@ def check_accuracy(loader, model, mode, device):
         )
 
 
-def produce_loss_plot(num_epochs, train_losses, val_losses, saving_path):
-    """Plot the categorical crossentropy (loss) evolving over time.
-
-    Params:
-        num_epochs (int)                        -- Number of epochs the model
-            was trained.
-        train_losses (numpy.array)              -- Training losses per epoch.
-        val_losses (numpy.array)                -- Validation losses per epoch.
-        learning_rate (float)                   -- Learning rate.
-        saving_path (str)                       -- Saving path.
-    """
-    epochs = np.arange(start=0, stop=num_epochs, step=1)
-    fig, ax = plt.subplots()
-    loc = ticker.MultipleLocator(base=5.0)
-    ax.xaxis.set_major_locator(loc)
-    plt.plot(epochs, train_losses, label="Training")
-    plt.plot(epochs, val_losses, label="Validation")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss (Categorical Crossentropy)")
-    plt.legend()
-    plt.savefig(
-        os.path.join(
-            saving_path,
-            f"loss-lr-{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
-        )
-    )
-    plt.close()
-
-
-def produce_acc_plot(
-    num_epochs, train_accuracies, val_accuracies, saving_path
-):
-    """Plot the accuracy evolving over time.
-
-    Params:
-        num_epochs (int)                        -- Number of epochs the model was trained.
-        train_accuracies (numpy.array)          -- Training accuracies per epoch.
-        val_accuracies (numpy.array)            -- Validation accuracies per epoch.
-        saving_path (str)                       -- Saving path for the loss plot.
-    """
-    epochs = np.arange(start=0, stop=num_epochs, step=1)
-    fig, ax = plt.subplots()
-    loc = ticker.MultipleLocator(base=5.0)
-    ax.xaxis.set_major_locator(loc)
-    plt.plot(epochs, train_accuracies, label="Training")
-    plt.plot(epochs, val_accuracies, label="Validation")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.savefig(
-        os.path.join(
-            saving_path,
-            f"accuracy-plot-{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
-        )
-    )
-    plt.close()
-
-
 def produce_and_print_confusion_matrix(
     num_classes,
     test_loader,

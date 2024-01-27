@@ -152,12 +152,6 @@ def main(
             wandb.finish()
 
         count_parameters(model)  # TODO: rename, misleadig name
-        produce_loss_plot(
-            args.num_epochs, train_losses, val_losses, args.saving_path
-        )
-        produce_acc_plot(
-            args.num_epochs, train_accs, val_accs, args.saving_path
-        )
 
         # check accuracy on train and test set and produce confusion matrix
         load_checkpoint(model=model, checkpoint=checkpoint)
