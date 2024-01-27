@@ -55,6 +55,7 @@ options:
 
 ## Run
 
+### Basics
 I ran the script `run.py` as follows:
 ```
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
@@ -66,6 +67,14 @@ docker run --shm-size 512m --rm -v $(pwd)/MNIST:/app/MNIST -v $(pwd)/lstm_vision
 ```
 The options for training I used are under `run_scripts.sh`.
 
+### W&B
+If you want to log some metrics to [Weights & Biases](https://wandb.ai/), append the following to the `docker run` command:
+```
+--wandb__api_key <api_key>
+# --wandb__api_key 2fru...
+```
+
+### Distributed Data Parallel (DDP)
 You can also easily specify a [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) setup by passing the flag `--use_ddp` in the `configs/conf.json` file (for this, ensure you have more than one NVIDIA GPU). Note that if running this on the [runpod.io](https://www.runpod.io/), you need to change the line
 ```python
 os.environ["MASTER_ADDR"] = "localhost"

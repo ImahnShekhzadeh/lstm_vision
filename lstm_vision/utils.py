@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import torch
+import wandb
 from LSTM_model import LSTM
 from prettytable import PrettyTable
 from termcolor import colored
@@ -296,6 +297,7 @@ def train_and_validate(
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
     world_size: Optional[int] = None,
+    wandb_logging: bool = False,
 ) -> tuple[dict[torch.Tensor, torch.Tensor], list, list, list, list]:
     """
     Train and validate the model.
@@ -313,6 +315,7 @@ def train_and_validate(
         max_norm: Maximum norm of the gradients.
         world_size: Number of processes participating in the job. Used to get
             the number of iterations correctly in a DDP setup.
+        wandb_logging: API key for Weights & Biases.
 
     Returns:
         checkpoint: Checkpoint of the model.
@@ -440,6 +443,19 @@ def train_and_validate(
         val_accs.append(val_num_correct / val_num_samples)
 
         if rank in [0, torch.device("cpu")]:
+            # log to Weights & Biases
+            if wandb_logging:
+                wandb.log(
+                    {
+                        "train_loss": train_losses[epoch],
+                        "val_loss": val_losses[epoch],
+                        "train_acc": train_accs[epoch],
+                        "val_acc": val_accs[epoch],
+                        "epoch": epoch,
+                    },
+                    step=epoch,
+                )
+
             print(
                 f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
                 f"Mean train/val loss: {train_losses[epoch]:.4f}/"
@@ -470,6 +486,9 @@ def train_and_validate(
                 f"Training {num_epochs} epochs ({num_iters} iterations)"
             ),
         )
+
+    if wandb_logging:
+        wandb.finish()
 
     return (
         checkpoint,

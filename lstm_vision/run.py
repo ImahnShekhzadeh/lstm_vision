@@ -3,6 +3,7 @@ from argparse import Namespace
 from datetime import datetime as dt
 
 import torch
+import wandb
 from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
@@ -37,6 +38,11 @@ def main(
         world_size: number of processes
         args: command line arguments
     """
+
+    wandb_logging = args.wandb__api_key is not None
+    if wandb_logging:
+        wandb.login(key=args.wandb__api_key)
+        wandb.init(project="lstm_vision")
 
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
@@ -120,6 +126,7 @@ def main(
         freq_output__val=args.freq_output__val,
         max_norm=args.max_norm,
         world_size=world_size,
+        wandb_logging=wandb_logging,
     )
 
     if rank in [0, torch.device("cpu")]:

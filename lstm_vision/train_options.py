@@ -136,4 +136,10 @@ def get_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Whether to use distributed data parallel (DDP).",
     )
+    parser.add_argument(
+        "--wandb__api_key",
+        type=str,
+        default=None,
+        help="API key for wandb (https://wandb.ai).",
+    )
     return parser
