@@ -1,5 +1,5 @@
 #!/bin/sh
-isort /app/scripts/*.py
-black /app/scripts/*.py
+isort /app/lstm_vision/*.py
+black /app/lstm_vision/*.py
 
-python3 -B /app/scripts/run.py "$@"
+python3 -B /app/lstm_vision/run.py "$@"
