@@ -26,14 +26,13 @@ from torch.utils.data import DataLoader, DistributedSampler, random_split
 from torchvision import datasets, transforms
 
 
-def total_norm__grads(model: nn.Module):
+def total_norm__grads(model: nn.Module) -> float:
     """
     Calculate total norm of gradients.
 
     Args:
         model: Model for which we want to check whether gradient clipping is
             necessary.
-        max_norm: Maximum norm of the gradients.
     """
     total_norm = 0
     for p in model.parameters():
