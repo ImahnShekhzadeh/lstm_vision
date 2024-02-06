@@ -13,6 +13,7 @@ from utils import (
     cleanup,
     count_parameters,
     get_dataloaders,
+    get_datasets,
     get_model,
     load_checkpoint,
     produce_and_print_confusion_matrix,
@@ -46,10 +47,17 @@ def main(
             world_size=world_size,
         )
 
-    # get dataloaders
-    train_loader, val_loader, test_loader = get_dataloaders(
+    # get datasets
+    train_dataset, val_dataset, test_dataset = get_datasets(
         channels_img=args.channels_img,
         train_split=args.train_split,
+    )
+
+    # get dataloaders
+    train_loader, val_loader, test_loader = get_dataloaders(
+        train_dataset=train_dataset,
+        val_dataset=val_dataset,
+        test_dataset=test_dataset,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,

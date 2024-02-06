@@ -6,7 +6,7 @@ from copy import deepcopy
 from datetime import datetime as dt
 from math import ceil
 from time import perf_counter
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -201,27 +201,20 @@ def check_and_print_args(args: Namespace) -> None:
     print(args)
 
 
-def get_dataloaders(
-    channels_img: int,
-    train_split: float,
-    batch_size: int,
-    num_workers: int,
-    pin_memory: bool,
-    use_ddp: bool = False,
-) -> tuple[DataLoader, DataLoader, DataLoader]:
+def get_datasets(
+    channels_img: int, train_split: float
+) -> Tuple[
+    datasets.VisionDataset, datasets.VisionDataset, datasets.VisionDataset
+]:
     """
-    Get the dataloaders for the train, validation and test set.
+    Get the train, val and test datasets.
 
     Args:
         channels_img: Number of channels in the input images.
         train_split: Percentage of the training set to use for training.
-        batch_size: Batch size.
-        num_workers: Number of subprocesses used in the dataloaders.
-        pin_memory: Whether tensors are copied into CUDA pinned memory.
-        use_ddp: Whether to use DDP.
 
     Returns:
-        Train, val and test loader
+        Train, val and test datasets.
     """
 
     # define data transformation:
@@ -259,6 +252,34 @@ def get_dataloaders(
         download=True,
     )
 
+    return train_subset, val_subset, test_dataset
+
+
+def get_dataloaders(
+    train_dataset: datasets.VisionDataset,
+    val_dataset: datasets.VisionDataset,
+    test_dataset: datasets.VisionDataset,
+    batch_size: int,
+    num_workers: int,
+    pin_memory: bool,
+    use_ddp: bool = False,
+) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    """
+    Get the dataloaders for the train, validation and test set.
+
+    Args:
+        train_dataset: Training set.
+        val_dataset: Validation set.
+        test_dataset: Test set.
+        batch_size: Batch size.
+        num_workers: Number of subprocesses used in the dataloaders.
+        pin_memory: Whether tensors are copied into CUDA pinned memory.
+        use_ddp: Whether to use DDP.
+
+    Returns:
+        Train, val and test loader
+    """
+
     loader_kwargs = {
         "batch_size": batch_size,
         "shuffle": False if use_ddp else True,
@@ -266,13 +287,13 @@ def get_dataloaders(
         "pin_memory": pin_memory,
     }
     train_loader = DataLoader(
-        dataset=train_subset,
-        sampler=DistributedSampler(train_subset) if use_ddp else None,
+        dataset=train_dataset,
+        sampler=DistributedSampler(train_dataset) if use_ddp else None,
         **loader_kwargs,
     )
     val_loader = DataLoader(
-        dataset=val_subset,
-        sampler=DistributedSampler(val_subset) if use_ddp else None,
+        dataset=val_dataset,
+        sampler=DistributedSampler(val_dataset) if use_ddp else None,
         **loader_kwargs,
     )
     test_loader = DataLoader(
