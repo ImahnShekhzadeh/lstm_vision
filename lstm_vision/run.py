@@ -1,6 +1,6 @@
 import os
+import shutil
 from argparse import Namespace
-from datetime import datetime as dt
 
 import torch
 import wandb
@@ -42,14 +42,15 @@ def main(
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
-    # check if saving path is empty and create it if non-existent
+    # create saving dir if non-existent, check if saving path is empty, and
+    # copy JSON config file there
+    os.makedirs(args.saving_path, exist_ok=True)
     if not len(os.listdir(args.saving_path)) == 0:
         raise ValueError(
             f"Saving path `{args.saving_path}` is not empty! Please provide "
             "another path."
         )
-
-    os.makedirs(args.saving_path, exist_ok=True)
+    shutil.copy(src=args.config, dst=args.saving_path)
 
     if args.use_ddp:
         setup(
