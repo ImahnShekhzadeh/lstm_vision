@@ -17,3 +17,6 @@ test_sth.ipynb
 
 # outputs dir
 outputs
+
+# wandb
+wandb
