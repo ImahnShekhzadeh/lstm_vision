@@ -42,7 +42,13 @@ def main(
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
 
-    # create saving path
+    # check if saving path is empty and create it if non-existent
+    if not len(os.listdir(args.saving_path)) == 0:
+        raise ValueError(
+            f"Saving path `{args.saving_path}` is not empty! Please provide "
+            "another path."
+        )
+
     os.makedirs(args.saving_path, exist_ok=True)
 
     if args.use_ddp:
