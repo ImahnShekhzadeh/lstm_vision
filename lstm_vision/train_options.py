@@ -62,7 +62,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--saving_path",
         type=str,
         default="",
-        help="Saving path for the files (loss plot, accuracy plot, etc.)",
+        help="Saving path for the files.",
     )
     parser.add_argument(
         "--seed_number",

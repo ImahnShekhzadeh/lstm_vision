@@ -150,7 +150,7 @@ def main(
             state=checkpoint,
             filename=os.path.join(
                 args.saving_path,
-                f"lstm_cp_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.pt",
+                f"lstm_cp.pt",
             ),
         )
 

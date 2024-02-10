@@ -446,16 +446,21 @@ def train_and_validate(
         val_losses.append(
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
         )
+
+        # Calculate accuracies for each epoch:
+        train_accs.append(num_correct / num_samples)
+        val_accs.append(val_num_correct / val_num_samples)
+
+        # update checkpoint dict if val loss has decreased
         if val_losses[epoch] < min_val_loss:
             min_val_loss = val_losses[epoch]
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
+                "val_loss": val_losses[epoch],
+                "val_acc": val_accs[epoch],
+                "epoch": epoch,
             }
-
-        # Calculate accuracies for each epoch:
-        train_accs.append(num_correct / num_samples)
-        val_accs.append(val_num_correct / val_num_samples)
 
         if rank in [0, torch.device("cpu")]:
             # log to Weights & Biases
@@ -663,16 +668,27 @@ def load_checkpoint(
     print("=> Checkpoint loaded.")
 
 
-def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
+def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
     """Creates a model checkpoint to save and load a model.
 
     Params:
-        state (dictionary)      -- The state of the model and optimizer in a
-            dictionary.
-        filename (pth.tar)      -- The name of the checkpoint.
+        state: State of model and optimizer in a dictionary.
+        filename: The name of the checkpoint.
     """
+    log_msg = f"\n=> Saving checkpoint '{filename}' "
+    if "val_loss" in state.keys():
+        log_msg += (
+            f"corresponding to a validation loss of {state['val_loss']:.4f} "
+        )
+    if "val_acc" in state.keys():
+        log_msg += (
+            f"and a validation accuracy of {100 * state['val_acc']:.2f} % "
+        )
+    if "epoch" in state.keys():
+        log_msg += f"at epoch {state['epoch']}."
+    print(log_msg)
+
     torch.save(state, filename)
-    print("\n=> Saving checkpoint")
 
 
 def count_parameters(model: nn.Module) -> None:
@@ -786,8 +802,11 @@ def produce_and_print_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            f"confusion_matrix_{dt.now().strftime('%dp%mp%Y-%Hp%M')}.pdf",
-        )
+            f"confusion_matrix.pdf",
+        ),
+        bbox_inches="tight",
+        pad_inches=0.01,
+        dpi=600,
     )
 
     return confusion_matrix

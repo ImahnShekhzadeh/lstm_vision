@@ -61,10 +61,6 @@ I ran the script `run.py` as follows:
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
 docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 --config configs/conf.json
 ```
-If you prefer the output of the script `run.py` to be stored in a separate file and you are in a UNIX-based environment, you can append `> "outputs/output_$(date +%dp%mp%y-%Hp%Mp%S).log`, so the command for `docker run [...]` becomes,
-```
-mkdir outputs && docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 --config configs/conf.json > "outputs/output_$(date +%dp%mp%y-%Hp%Mp%S).log"
-```
 
 The options for training I used are in `configs/conf.json`.
 
