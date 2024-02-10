@@ -38,8 +38,12 @@ def main(
         args: command line arguments
     """
 
+    # set random seed
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
+
+    # create saving path
+    os.makedirs(args.saving_path, exist_ok=True)
 
     if args.use_ddp:
         setup(
