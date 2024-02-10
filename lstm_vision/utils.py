@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import wandb
-from LSTM_model import LSTM
 from prettytable import PrettyTable
 from termcolor import colored
 from torch import Tensor, autocast
@@ -24,6 +23,8 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader, DistributedSampler, random_split
 from torchvision import datasets, transforms
+
+from LSTM_model import LSTM
 
 
 def total_norm__grads(model: nn.Module) -> float:

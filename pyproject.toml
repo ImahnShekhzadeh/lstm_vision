@@ -27,6 +27,8 @@ profile="black"
 line_length=79
 # necessary to get `isort` working in Docker container:
 overwrite_in_place=true
+known_first_party=["utils", "LSTM_model"]
+known_third_party=["wandb"]
 
 [tool.black]
 line-length = 79
