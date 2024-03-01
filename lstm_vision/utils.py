@@ -436,7 +436,7 @@ def train_and_validate(
                         loader=val_loader,
                         epoch=epoch,
                         t_0=t0,
-                        loss=cce_mean(val_output, val_labels).cpu().item(),
+                        loss=val_loss / batch_size,
                         mode="val",
                         frequency=freq_output__val,
                     )
