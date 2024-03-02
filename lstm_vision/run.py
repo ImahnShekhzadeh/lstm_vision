@@ -1,5 +1,5 @@
+import logging
 import os
-import shutil
 from argparse import Namespace
 
 import torch
@@ -42,16 +42,6 @@ def main(
     # set random seed
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number)
-
-    # create saving dir if non-existent, check if saving path is empty, and
-    # copy JSON config file there
-    os.makedirs(args.saving_path, exist_ok=True)
-    if not len(os.listdir(args.saving_path)) == 0:
-        raise ValueError(
-            f"Saving path `{args.saving_path}` is not empty! Please provide "
-            "another path."
-        )
-    shutil.copy(src=args.config, dst=args.saving_path)
 
     if args.use_ddp:
         setup(
@@ -102,7 +92,7 @@ def main(
             wandb.login(key=args.wandb__api_key)
             wandb.init(project="lstm_vision", name=args.saving_path)
 
-        print(
+        logging.info(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n"
         )
@@ -112,7 +102,7 @@ def main(
 
     # compile model if specified
     if args.compile_mode is not None:
-        print(f"\nCompiling model in ``{args.compile_mode}`` mode...\n")
+        logging.info(f"\nCompiling model in ``{args.compile_mode}`` mode...\n")
         model = torch.compile(model, mode=args.compile_mode, fullgraph=False)
 
     # Optimizer:
@@ -198,12 +188,22 @@ if __name__ == "__main__":
     parser = get_parser()
     args = retrieve_args(parser)
 
+    # Setup basic configuration for logging
+    logging.basicConfig(
+        filename=os.path.join(args.saving_path, "run.log"),
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    if args.config is not None and os.path.exists(args.config):
+        logging.info(f"Config file '{args.config}' found and loaded.")
+    logging.info(args)
+
     # define world size (number of GPUs)
     world_size = torch.cuda.device_count()
 
     if torch.cuda.is_available():
         list_gpus = [torch.cuda.get_device_name(i) for i in range(world_size)]
-        print(f"\nGPU(s): {list_gpus}\n")
+        logging.info(f"\nGPU(s): {list_gpus}\n")
 
     if args.use_ddp and world_size > 1:
         # When using a single GPU per process and per

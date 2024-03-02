@@ -1,6 +1,8 @@
 import gc
 import json
+import logging
 import os
+import shutil
 from argparse import ArgumentParser, Namespace
 from copy import deepcopy
 from datetime import datetime as dt
@@ -155,7 +157,7 @@ def retrieve_args(parser: ArgumentParser) -> Namespace:
 
             parser.set_defaults(**config_args)
             args = parser.parse_args()
-            print(
+            logging.info(
                 colored(
                     f"Config file '{args.config}' found and loaded.\n\n",
                     color="green",
@@ -164,18 +166,29 @@ def retrieve_args(parser: ArgumentParser) -> Namespace:
         else:
             raise ValueError(f"Config file '{args.config}' not found.")
 
-    check_and_print_args(args)
+    check_args(args)
 
     return args
 
 
-def check_and_print_args(args: Namespace) -> None:
+def check_args(args: Namespace) -> None:
     """
     Check provided arguments and print them to CLI.
 
     Args:
         args: Arguments provided by the user.
     """
+
+    # create saving dir if non-existent, check if saving path is empty, and
+    # copy JSON config file there
+    os.makedirs(args.saving_path, exist_ok=True)
+    if not len(os.listdir(args.saving_path)) == 0:
+        raise ValueError(
+            f"Saving path `{args.saving_path}` is not empty! Please provide "
+            "another path."
+        )
+    shutil.copy(src=args.config, dst=args.saving_path)
+
     assert args.compile_mode in [
         None,
         "default",
@@ -199,7 +212,6 @@ def check_and_print_args(args: Namespace) -> None:
         "``train_split`` should be chosen between 0 and 1, "
         f"but is {args.train_split}."
     )
-    print(args)
 
 
 def get_datasets(
@@ -477,7 +489,7 @@ def train_and_validate(
                     step=epoch,
                 )
 
-            print(
+            logging.info(
                 f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
                 f"Mean train/val loss: {train_losses[epoch]:.4f}/"
                 f"{val_losses[epoch]:.4f}\tTrain/val acc: "
@@ -575,7 +587,7 @@ def end_timer_and_print(
             f"{torch.cuda.max_memory_allocated(device=device) / 1024**2:.3f} "
             "[MB]"
         )
-    print(msg)
+    logging.info(msg)
 
     return time_diff
 
@@ -648,7 +660,7 @@ def print__batch_info(
             percentage=prog_perc,
             loss=loss,
         )
-        print(f"{formatted_line}")
+        logging.info(f"{formatted_line}")
 
 
 def load_checkpoint(
@@ -666,7 +678,7 @@ def load_checkpoint(
     model.load_state_dict(state_dict=checkpoint["state_dict"])
     if optimizer is not None:
         optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
-    print("=> Checkpoint loaded.")
+    logging.info("=> Checkpoint loaded.")
 
 
 def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
@@ -687,7 +699,7 @@ def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
         )
     if "epoch" in state.keys():
         log_msg += f"at epoch {state['epoch']}."
-    print(log_msg)
+    logging.info(log_msg)
 
     torch.save(state, filename)
 
@@ -706,7 +718,7 @@ def count_parameters(model: nn.Module) -> None:
         param = parameter.numel()
         table.add_row([name, param])
         total_params += param
-    print(table)
+    logging.info(table)
 
 
 def check_accuracy(loader, model, mode, device):
@@ -744,7 +756,7 @@ def check_accuracy(loader, model, mode, device):
             num_correct += (predictions == labels).sum()
             num_samples += predictions.size(0)
 
-        print(
+        logging.info(
             f"{mode.capitalize()} data: Got {num_correct}/{num_samples} with "
             f"accuracy {(100 * num_correct / num_samples):.2f} %"
         )
@@ -791,7 +803,7 @@ def produce_and_print_confusion_matrix(
             total_sums += element
         confusion_matrix[i] /= total_sums
 
-    print(f"\nConfusion matrix:\n\n{confusion_matrix}")
+    logging.info(f"\nConfusion matrix:\n\n{confusion_matrix}")
 
     # Convert PyTorch tensor to numpy array:
     fig = plt.figure()
