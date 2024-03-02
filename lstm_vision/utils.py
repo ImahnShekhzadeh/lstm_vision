@@ -349,7 +349,6 @@ def train_and_validate(
 
     # define loss functions:
     cce_mean = nn.CrossEntropyLoss(reduction="mean")
-    cce_sum = nn.CrossEntropyLoss(reduction="sum")
 
     start_time = start_timer(device=rank)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
@@ -383,7 +382,7 @@ def train_and_validate(
             scaler.step(optimizer)
             scaler.update()
 
-            trainingLoss_perEpoch.append(cce_sum(output, labels).cpu().item())
+            trainingLoss_perEpoch.append(loss.cpu().item() * output.shape[0])
 
             # calculate accuracy
             with torch.no_grad():
@@ -421,7 +420,10 @@ def train_and_validate(
                     val_output = model(
                         val_images.squeeze_(dim=1).to(rank)
                     )  # `[N, C]`
-                    val_loss = cce_sum(val_output, val_labels).cpu().item()
+                    val_loss = (
+                        cce_mean(val_output, val_labels).cpu().item()
+                        * val_output.shape[0]
+                    )
 
                 valLoss_perEpoch.append(val_loss)
 
