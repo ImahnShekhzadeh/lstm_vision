@@ -157,12 +157,6 @@ def retrieve_args(parser: ArgumentParser) -> Namespace:
 
             parser.set_defaults(**config_args)
             args = parser.parse_args()
-            logging.info(
-                colored(
-                    f"Config file '{args.config}' found and loaded.\n\n",
-                    color="green",
-                )
-            )
         else:
             raise ValueError(f"Config file '{args.config}' not found.")
 
