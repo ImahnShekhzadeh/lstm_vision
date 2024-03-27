@@ -111,7 +111,7 @@ def main(
         model = torch.compile(model, mode=args.compile_mode, fullgraph=False)
 
     # Optimizer:
-    optimizer = optim.Adam(
+    optimizer = optim.AdamW(
         params=model.parameters(),
         lr=args.learning_rate,
         betas=(0.9, 0.999),
