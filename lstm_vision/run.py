@@ -93,7 +93,7 @@ def main(
             wandb.login(key=args.wandb__api_key)
             wandb.init(
                 project="lstm_vision",
-                name=dt.now().strftime("%dp%mp%Y_%Hp%M"),
+                name=dt.now().strftime("%dp%mp%Y_%Hp%Mp%S"),
                 config=args,
             )
 
