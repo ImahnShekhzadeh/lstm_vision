@@ -1,6 +1,7 @@
 import logging
 import os
 from argparse import Namespace
+from datetime import datetime as dt
 
 import torch
 import wandb
@@ -90,7 +91,11 @@ def main(
         wandb_logging = args.wandb__api_key is not None
         if wandb_logging:
             wandb.login(key=args.wandb__api_key)
-            wandb.init(project="lstm_vision", name=args.saving_path)
+            wandb.init(
+                project="lstm_vision",
+                name=dt.now().strftime("%dp%mp%Y_%Hp%M"),
+                config=args,
+            )
 
         logging.info(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
