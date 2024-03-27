@@ -5,6 +5,7 @@
     "freq_output__train": 1,
     "freq_output__val": 1,
     "learning_rate": 2e-3,
+    "weight_decay": 0.0,
     "num_epochs": 30,
     "num_workers": 4,
     "seed_number": 0,

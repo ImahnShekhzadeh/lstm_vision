@@ -95,3 +95,6 @@ Test data: Got 9881/10000 with accuracy 98.81 %
 On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `30` epochs takes about `131` s, and in total about `12.56` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.56` GB VRAM, you can decrease the batch size.
 
 I also tried the flag `--compile_mode` (with all modes "default", "reduce-overhead" & "max-autotune"), and noticed that the runtime slightly _increases_ when using the MNIST dataset. This happens, since the warmup phase, cf. [here](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html), takes a long time, and after the warmup phase, the runtime epoch is comparable to no compilation. However, for other CV datasets (e.g. CIFAR100) and other model architectures, this might change! Also, please note that `torch.compile(..., full_graph=False)` has to be used, since `TorchDynamo` does not allow `full_graph=True` for RNNs/GRUs/LSTMs.
+
+# TODO
+- log git branch and git commit hash
