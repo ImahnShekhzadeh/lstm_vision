@@ -116,6 +116,7 @@ def main(
         lr=args.learning_rate,
         betas=(0.9, 0.999),
         eps=1e-08,
+        weight_decay=args.weight_decay,
     )
 
     # Set network to train mode:

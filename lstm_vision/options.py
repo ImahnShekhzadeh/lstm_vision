@@ -142,4 +142,10 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         help="API key for wandb (https://wandb.ai).",
     )
+    parser.add_argument(
+        "--weight_decay",
+        type=float,
+        default=0.0,
+        help="Weight decay used with optimizer.",
+    )
     return parser
