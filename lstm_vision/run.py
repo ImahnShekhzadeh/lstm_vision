@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from argparse import Namespace
 from datetime import datetime as dt
 
@@ -195,13 +196,20 @@ if __name__ == "__main__":
     args = retrieve_args(parser)
 
     # Setup basic configuration for logging
+    log_level = logging.INFO
     logging.basicConfig(
         filename=os.path.join(
             args.saving_path, f"run_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.log"
         ),
-        level=logging.INFO,
+        level=log_level,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
+
+    # Create `StreamHandler` for stdout and add it to root logger
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    logging.getLogger().addHandler(console_handler)
+
     if args.config is not None and os.path.exists(args.config):
         logging.info(f"Config file '{args.config}' found and loaded.")
     logging.info(args)
