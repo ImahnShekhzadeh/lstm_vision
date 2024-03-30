@@ -90,13 +90,6 @@ def main(
     # setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
         wandb_logging = args.wandb__api_key is not None
-        if wandb_logging:
-            wandb.login(key=args.wandb__api_key)
-            wandb.init(
-                project="lstm_vision",
-                name=dt.now().strftime("%dp%mp%Y_%Hp%Mp%S"),
-                config=args,
-            )
 
         logging.info(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
@@ -196,12 +189,22 @@ if __name__ == "__main__":
     parser = get_parser()
     args = retrieve_args(parser)
 
+    # Get timestamp
+    now = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
+
+    # Setup Weights & Biases
+    if args.wandb__api_key is not None:
+        wandb.login(key=args.wandb__api_key)
+        wandb.init(
+            project="lstm_vision",
+            name=now,
+            config=args,
+        )
+
     # Setup basic configuration for logging
     log_level = logging.INFO
     logging.basicConfig(
-        filename=os.path.join(
-            args.saving_path, f"run_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.log"
-        ),
+        filename=os.path.join(args.saving_path, f"run_{now[:-3]}.log"),
         level=log_level,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
