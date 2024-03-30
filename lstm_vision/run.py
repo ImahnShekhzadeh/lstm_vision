@@ -114,8 +114,8 @@ def main(
     optimizer = optim.AdamW(
         params=model.parameters(),
         lr=args.learning_rate,
-        betas=(0.9, 0.999),
-        eps=1e-08,
+        betas=(args.beta_1, args.beta_2),
+        eps=args.eps,
         weight_decay=args.weight_decay,
     )
 

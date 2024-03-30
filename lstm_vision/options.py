@@ -95,6 +95,24 @@ def get_parser() -> argparse.ArgumentParser:
         help="Learning rate for the training of the NN.",
     )
     parser.add_argument(
+        "--beta_1",
+        type=float,
+        default=0.9,
+        help="beta_1 of the ADAM(W) optimizer.",
+    )
+    parser.add_argument(
+        "--beta_2",
+        type=float,
+        default=0.999,
+        help="beta_2 of the ADAM(W) optimizer.",
+    )
+    parser.add_argument(
+        "--eps",
+        type=float,
+        default=1e-8,
+        help="epsilon of the ADAM(W) optimizer.",
+    )
+    parser.add_argument(
         "--num_epochs",
         type=int,
         default=10,
