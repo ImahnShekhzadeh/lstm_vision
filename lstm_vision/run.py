@@ -169,9 +169,6 @@ def main(
         cleanup()
 
     if rank in [0, torch.device("cpu")]:
-        if wandb_logging:
-            wandb.finish()
-
         count_parameters(model)  # TODO: rename, misleadig name
 
         # load checkpoint with lowest validation loss for final evaluation;
@@ -190,6 +187,9 @@ def main(
             args.saving_path,
             rank,
         )
+
+        if wandb_logging:
+            wandb.finish()
 
 
 if __name__ == "__main__":
