@@ -196,7 +196,9 @@ if __name__ == "__main__":
 
     # Setup basic configuration for logging
     logging.basicConfig(
-        filename=os.path.join(args.saving_path, "run.log"),
+        filename=os.path.join(
+            args.saving_path, f"run_{dt.now().strftime('%dp%mp%Y_%Hp%M')}.log"
+        ),
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
