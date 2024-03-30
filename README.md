@@ -87,14 +87,16 @@ where `ip_address` can be obtained via `hostname -I`.
 
 All results were obtained on a single GPU. For this small model, I do not recommend a DDP setup.
 
-Training a bidirectional LSTM with roughly `3.9`M params for `15` epochs results in,
+Training a bidirectional LSTM with roughly `3.9`M params for `50` epochs results in,
 ```
-Train data: Got 49613/50000 with accuracy 99.23 %
-Test data: Got 9881/10000 with accuracy 98.81 %
+Train data: Got 49824/50000 with accuracy 99.65 %
+Test data: Got 9899/10000 with accuracy 98.99 %
 ```
-On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `30` epochs takes about `131` s, and in total about `12.56` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.56` GB VRAM, you can decrease the batch size.
+On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `50` epochs takes about `232` s, and in total about `12.56` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.56` GB VRAM, decrease the batch size.
 
 I also tried the flag `--compile_mode` (with all modes "default", "reduce-overhead" & "max-autotune"), and noticed that the runtime slightly _increases_ when using the MNIST dataset. This happens, since the warmup phase, cf. [here](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html), takes a long time, and after the warmup phase, the runtime epoch is comparable to no compilation. However, for other CV datasets (e.g. CIFAR100) and other model architectures, this might change! Also, please note that `torch.compile(..., full_graph=False)` has to be used, since `TorchDynamo` does not allow `full_graph=True` for RNNs/GRUs/LSTMs.
+
+The above results were obtained with $10 \%$ label smoothing. I varied the label smoothing between $0 \%$ and $10 \%$ in steps of $2 \%$ and noticed that the greater the label smoothing, the higher the train and validation losses per epoch.
 
 # TODO
 - log git branch and git commit hash
