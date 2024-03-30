@@ -202,6 +202,10 @@ def check_args(args: Namespace) -> None:
         "``dropout_rate`` should be chosen between 0 (inclusive) and 1 "
         f"(exclusive), but is {args.dropout_rate}."
     )
+    assert 0 <= args.label_smoothing < 1, (
+        "``label_smoothing`` should be chosen between 0 (inclusive) and 1 "
+        f"(exclusive), but is {args.label_smoothing}."
+    )
     assert 0 < args.train_split < 1, (
         "``train_split`` should be chosen between 0 and 1, "
         f"but is {args.train_split}."
@@ -319,6 +323,7 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    label_smoothing: float = 0.0,
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
@@ -336,6 +341,8 @@ def train_and_validate(
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
+        label_smoothing: Amount of smoothing to be applied when calculating
+            loss.
         freq_output__train: Frequency at which to print the training info.
         freq_output__val: Frequency at which to print the validation info.
         max_norm: Maximum norm of the gradients.
@@ -348,7 +355,9 @@ def train_and_validate(
     """
 
     # define loss functions:
-    cce_mean = nn.CrossEntropyLoss(reduction="mean")
+    cce_mean = nn.CrossEntropyLoss(
+        reduction="mean", label_smoothing=label_smoothing
+    )
 
     start_time = start_timer(device=rank)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []

@@ -146,6 +146,7 @@ def main(
         use_amp=args.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,
+        label_smoothing=args.label_smoothing,
         freq_output__train=args.freq_output__train,
         freq_output__val=args.freq_output__val,
         max_norm=args.max_norm,

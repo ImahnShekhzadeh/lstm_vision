@@ -42,6 +42,12 @@ def get_parser() -> argparse.ArgumentParser:
         help="Frequency of outputting the validation loss and accuracy.",
     )
     parser.add_argument(
+        "--label_smoothing",
+        type=float,
+        default=0.0,
+        help="Amount of smoothing to be applied when calculating loss.",
+    )
+    parser.add_argument(
         "--max_norm",
         type=float,
         default=None,
