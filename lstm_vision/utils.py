@@ -323,13 +323,15 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    num_additional_cps: int = 0,
+    saving_path: str = None,
     label_smoothing: float = 0.0,
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
     world_size: Optional[int] = None,
     wandb_logging: bool = False,
-) -> Dict[torch.Tensor, torch.Tensor]:
+) -> Dict:
     """
     Train and validate the model.
 
@@ -341,6 +343,9 @@ def train_and_validate(
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
+        num_additional_cps: Number of checkpoints to save (one is always saved
+            at the lowest validation loss)
+        saving_path: Directory path to save the checkpoints.
         label_smoothing: Amount of smoothing to be applied when calculating
             loss.
         freq_output__train: Frequency at which to print the training info.
@@ -351,8 +356,15 @@ def train_and_validate(
         wandb_logging: API key for Weights & Biases.
 
     Returns:
-        checkpoint: Checkpoint of the model.
+        Checkpoint of the model corresponding to the lowest validation loss.
     """
+
+    # check saving path
+    if num_additional_cps >= 1:
+        assert (
+            saving_path is not None
+        ), "Please provide a valid saving path for the additional checkpoints"
+        os.makedirs(saving_path, exist_ok=True)
 
     # define loss functions:
     cce_mean = nn.CrossEntropyLoss(
@@ -472,6 +484,20 @@ def train_and_validate(
         # update checkpoint dict if val loss has decreased
         if val_losses[epoch] < min_val_loss:
             min_val_loss = val_losses[epoch]
+            checkpoint_best = {
+                "state_dict": deepcopy(model.state_dict()),
+                "optimizer": deepcopy(optimizer.state_dict()),
+                "val_loss": val_losses[epoch],
+                "val_acc": val_accs[epoch],
+                "epoch": epoch,
+            }
+
+        # save additional checkpoints
+        if (
+            (num_additional_cps >= 1)
+            and ((epoch + 1) % (num_epochs // num_additional_cps) == 0)
+            and rank in [0, torch.device("cpu")]
+        ):
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
@@ -479,6 +505,13 @@ def train_and_validate(
                 "val_acc": val_accs[epoch],
                 "epoch": epoch,
             }
+            save_checkpoint(
+                state=checkpoint,
+                filename=os.path.join(
+                    saving_path,
+                    f"cp_epoch_{epoch}.pt",
+                ),
+            )
 
         if rank in [0, torch.device("cpu")]:
             # log to Weights & Biases
@@ -525,7 +558,7 @@ def train_and_validate(
             ),
         )
 
-    return checkpoint
+    return checkpoint_best
 
 
 def start_timer(device: torch.device | int) -> float:

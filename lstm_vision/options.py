@@ -140,6 +140,15 @@ def get_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--num_additional_cps",
+        type=int,
+        default=2,
+        help=(
+            "Number of checkpoints to save (one is always saved at the lowest "
+            "validation loss)."
+        ),
+    )
+    parser.add_argument(
         "--bidirectional",
         action="store_true",
         help="Whether to use bidirectional LSTM.",
