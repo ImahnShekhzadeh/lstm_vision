@@ -726,9 +726,22 @@ def load_checkpoint(
         optimizer: Optimizer for which state dict is loaded.
     """
     model.load_state_dict(state_dict=checkpoint["state_dict"])
+    loading_msg = "=> Checkpoint loaded."
+
     if optimizer is not None:
         optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
-    logging.info("=> Checkpoint loaded.")
+
+    if "epoch" in checkpoint.keys():
+        loading_msg += f" It had been saved at epoch {checkpoint['epoch']}."
+
+    if "val_loss" in checkpoint.keys():
+        loading_msg += f" Validation loss: {checkpoint['val_loss']:.4f}."
+
+    if "val_acc" in checkpoint.keys():
+        loading_msg += (
+            f" Validation accuracy: {100 * checkpoint['val_acc']:.2f} %."
+        )
+    logging.info(loading_msg)
 
 
 def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:

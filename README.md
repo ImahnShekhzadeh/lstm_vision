@@ -99,4 +99,8 @@ I also tried the flag `--compile_mode` (with all modes "default", "reduce-overhe
 The above results were obtained with $10 \%$ label smoothing. I varied the label smoothing between $0 \%$ and $10 \%$ in steps of $2 \%$ and noticed that the greater the label smoothing, the higher the train and validation losses per epoch.
 
 # TODO
+- check number of checkpoints created
 - log git branch and git commit hash
+- use torchvision.transforms.v2 instead of torchvision.transforms
+- when calculating accuracy, use `torch.autocast()`, and use `@torch.no_grad()` decorator
+- set shuffle to `False` for val loader
