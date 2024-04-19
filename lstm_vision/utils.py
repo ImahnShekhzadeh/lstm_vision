@@ -414,7 +414,7 @@ def train_and_validate(
             with torch.no_grad():
                 model.eval()
                 batch_size = output.shape[0]
-                output_maxima, max_indices = output.max(dim=1, keepdim=False)
+                max_indices = output.argmax(dim=1, keepdim=False)
                 num_correct += (max_indices == labels).sum().cpu().item()
                 num_samples += batch_size
 
@@ -454,10 +454,7 @@ def train_and_validate(
                 valLoss_perEpoch.append(val_loss)
 
                 # calculate accuracy
-                # TODO: write a `calculate_accuracy()` function
-                val_output_maxima, val_max_indices = val_output.max(
-                    dim=1, keepdim=False
-                )
+                val_max_indices = val_output.argmax(dim=1, keepdim=False)
                 val_num_correct += (
                     (val_max_indices == val_labels).cpu().sum().item()
                 )
