@@ -15,12 +15,12 @@ from utils import (
     check_accuracy,
     cleanup,
     count_parameters,
+    get_confusion_matrix,
     get_dataloaders,
     get_datasets,
     get_git_info,
     get_model,
     load_checkpoint,
-    produce_and_print_confusion_matrix,
     retrieve_args,
     save_checkpoint,
     setup,
@@ -185,12 +185,13 @@ def main(
         check_accuracy(
             test_loader, model, use_amp=args.use_amp, mode="test", device=rank
         )
-        produce_and_print_confusion_matrix(
+        get_confusion_matrix(
             num_classes,
             test_loader,
             model,
-            args.saving_path,
-            rank,
+            use_amp=args.use_amp,
+            saving_path=args.saving_path,
+            device=rank,
         )
 
         if wandb_logging:

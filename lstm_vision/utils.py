@@ -815,6 +815,7 @@ def check_accuracy(
     Params:
         loader: Dataloader of the dataset for which to check the accuracy.
         model: Model.
+        use_amp: Whether to use automatic mixed precision.
         mode: Mode in which the model is in. Either "train" or "test".
         device: Device on which the code is executed.
     """
@@ -843,37 +844,47 @@ def check_accuracy(
     )
 
 
-def produce_and_print_confusion_matrix(
-    num_classes,
-    test_loader,
-    model,
-    saving_path,
-    device,
-):
-    """Produce a confusion matrix based on the test set.
-
-    Params:
-        num_classes (int)                           -- Number of classes NN has to predict at the end.
-        test_loader (torch.utils.data.DataLoader)   -- DataLoader for the test dataset.
-        model (torch.nn)                            -- Model that was trained.
-        saving_path (str)                           -- Saving path for the loss plot.
-        device (torch.device)                       -- Device on which the code was executed.
+@torch.no_grad()
+def get_confusion_matrix(
+    num_classes: int,
+    test_loader: DataLoader,
+    model: nn.Module,
+    use_amp: bool,
+    saving_path: str,
+    device: int | torch.device,
+) -> np.ndarray:
     """
-    confusion_matrix = torch.zeros(num_classes, num_classes)
+    Produce a confusion matrix based on the test set.
+
+    Args:
+        num_classes: Number of classes neural networks predicts at the end.
+        test_loader: DataLoader for the test dataset.
+        model: Model.
+        use_amp: Whether to use automatic mixed precision.
+        saving_path: Saving path where the confusion matrix is stored.
+        device: Device on which the code is executed.
+
+    Returns:
+        Confusion matrix.
+    """
+    model.eval()
     counter = 0
-    with torch.no_grad():
-        model.eval()
-        for i, (inputs, classes) in enumerate(test_loader):
-            inputs = inputs.to(device)
-            inputs = torch.squeeze(
-                input=inputs, dim=1
-            )  # shape: (batch_size, 28, 28), otherwise RNN throws error
-            classes = classes.to(device)
-            outputs = model(inputs)
-            _, preds = torch.max(outputs, 1)
-            for t, p in zip(classes.view(-1), preds.view(-1)):
-                confusion_matrix[t, p] += 1
-                counter += 1
+    confusion_matrix = torch.zeros(num_classes, num_classes)
+
+    for i, (inputs, classes) in enumerate(test_loader):
+        classes = classes.to(device)
+
+        with autocast(
+            device_type=classes.device.type,
+            dtype=torch.float16,
+            enabled=use_amp,
+        ):
+            outputs = model(inputs.squeeze(dim=1).to(device))
+
+        preds = outputs.argmax(dim=1)
+        for t, p in zip(classes.view(-1), preds.view(-1)):
+            confusion_matrix[t, p] += 1
+            counter += 1
 
     # Because of the random split in the datasets, the classes are imbalanced.
     # Thus, we should do a normalization across each label in the confusion
@@ -888,7 +899,7 @@ def produce_and_print_confusion_matrix(
 
     # Convert PyTorch tensor to numpy array:
     fig = plt.figure()
-    confusion_matrix = confusion_matrix.detach().cpu().numpy()
+    confusion_matrix = confusion_matrix.numpy()
     plt.imshow(confusion_matrix, cmap="jet")
     plt.colorbar()
     plt.xlabel("Predicted Label")
