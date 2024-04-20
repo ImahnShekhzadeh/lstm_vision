@@ -299,22 +299,24 @@ def get_dataloaders(
 
     loader_kwargs = {
         "batch_size": batch_size,
-        "shuffle": False if use_ddp else True,
         "num_workers": num_workers,
         "pin_memory": pin_memory,
     }
     train_loader = DataLoader(
         dataset=train_dataset,
         sampler=DistributedSampler(train_dataset) if use_ddp else None,
+        shuffle=False if use_ddp else True,
         **loader_kwargs,
     )
     val_loader = DataLoader(
         dataset=val_dataset,
         sampler=DistributedSampler(val_dataset) if use_ddp else None,
+        shuffle=False,
         **loader_kwargs,
     )
     test_loader = DataLoader(
         dataset=test_dataset,
+        shuffle=False,
         **loader_kwargs,
     )
 

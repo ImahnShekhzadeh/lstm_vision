@@ -89,8 +89,8 @@ All results were obtained on a single GPU. For this small model, I do not recomm
 
 Training a bidirectional LSTM with roughly `3.9`M params for `50` epochs results in,
 ```
-Train data: Got 49824/50000 with accuracy 99.65 %
-Test data: Got 9899/10000 with accuracy 98.99 %
+Train data: Got 49824/50000 with accuracy 99.60 %
+Test data: Got 9899/10000 with accuracy 99.05 %
 ```
 On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `50` epochs takes about `232` s, and in total about `12.56` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.56` GB VRAM, decrease the batch size.
 
@@ -100,4 +100,3 @@ The above results were obtained with $10 \%$ label smoothing. I varied the label
 
 # TODO
 - use torchvision.transforms.v2 instead of torchvision.transforms
-- set shuffle to `False` for val loader
