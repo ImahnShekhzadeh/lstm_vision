@@ -801,19 +801,22 @@ def count_parameters(model: nn.Module) -> None:
     logging.info(table)
 
 
-def check_accuracy(loader, model, mode, device):
+@torch.no_grad()
+def check_accuracy(
+    loader: DataLoader,
+    model: nn.Module,
+    use_amp: bool,
+    mode: str,
+    device: int | torch.device,
+):
     """
     Check the accuracy of a given model on a given dataset.
 
     Params:
-        loader (torch.utils.data.DataLoader)        -- The dataloader of the
-            dataset on which we want to check the accuracy.
-        model (torch.nn)                            -- Model for which we want
-            the total number of parameters.
-        mode (str):                                 -- Mode in which the model
-            is in. Either "train" or "test".
-        device (torch.device)                       -- Device on which the code
-            was executed.
+        loader: Dataloader of the dataset for which to check the accuracy.
+        model: Model.
+        mode: Mode in which the model is in. Either "train" or "test".
+        device: Device on which the code is executed.
     """
     assert mode in ["train", "test"]
 
@@ -821,25 +824,23 @@ def check_accuracy(loader, model, mode, device):
     num_correct = 0
     num_samples = 0
 
-    with torch.no_grad():
-        for images, labels in loader:
-            images = images.to(device=device)
-            images = torch.squeeze(
-                input=images, dim=1
-            )  # shape: ``(batch_size, 28, 28)``, otherwise RNN throws error
-            labels = labels.to(device=device)
+    for images, labels in loader:
+        labels = labels.to(device)
+        with autocast(
+            device_type=labels.device.type,
+            dtype=torch.float16,
+            enabled=use_amp,
+        ):
+            forward_pass = model(images.squeeze(dim=1).to(device))  # `(N, 10)`
 
-            forward_pass = model(images)  # shape: ``(batch_size, 10)``
-            _, predictions = forward_pass.max(
-                dim=1
-            )  # from our model, we get the shape ``(batch_size, 10)`` returned
-            num_correct += (predictions == labels).sum()
-            num_samples += predictions.size(0)
+        predictions = forward_pass.argmax(dim=1)
+        num_correct += (predictions == labels).sum().cpu().item()
+        num_samples += predictions.shape[0]
 
-        logging.info(
-            f"{mode.capitalize()} data: Got {num_correct}/{num_samples} with "
-            f"accuracy {(100 * num_correct / num_samples):.2f} %"
-        )
+    logging.info(
+        f"{mode.capitalize()} data: Got {num_correct}/{num_samples} with "
+        f"accuracy {(100 * num_correct / num_samples):.2f} %"
+    )
 
 
 def produce_and_print_confusion_matrix(

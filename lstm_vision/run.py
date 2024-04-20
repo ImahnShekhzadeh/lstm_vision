@@ -175,8 +175,16 @@ def main(
         load_checkpoint(model=model, checkpoint=checkpoint)
 
         # check accuracy on train and test set and produce confusion matrix
-        check_accuracy(train_loader, model, mode="train", device=rank)
-        check_accuracy(test_loader, model, mode="test", device=rank)
+        check_accuracy(
+            train_loader,
+            model,
+            use_amp=args.use_amp,
+            mode="train",
+            device=rank,
+        )
+        check_accuracy(
+            test_loader, model, use_amp=args.use_amp, mode="test", device=rank
+        )
         produce_and_print_confusion_matrix(
             num_classes,
             test_loader,

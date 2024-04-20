@@ -100,5 +100,4 @@ The above results were obtained with $10 \%$ label smoothing. I varied the label
 
 # TODO
 - use torchvision.transforms.v2 instead of torchvision.transforms
-- when calculating accuracy, use `torch.autocast()`, and use `@torch.no_grad()` decorator
 - set shuffle to `False` for val loader
