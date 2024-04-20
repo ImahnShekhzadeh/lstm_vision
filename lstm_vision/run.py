@@ -17,6 +17,7 @@ from utils import (
     count_parameters,
     get_dataloaders,
     get_datasets,
+    get_git_info,
     get_model,
     load_checkpoint,
     produce_and_print_confusion_matrix,
@@ -87,8 +88,9 @@ def main(
         use_ddp=args.use_ddp,
     )
 
-    # setup Weights & Biases, print # data and model summary
+    # get git info, setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
+        get_git_info()
         wandb_logging = args.wandb__api_key is not None
 
         logging.info(

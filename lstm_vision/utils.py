@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 from argparse import ArgumentParser, Namespace
 from copy import deepcopy
 from datetime import datetime as dt
@@ -318,6 +319,25 @@ def get_dataloaders(
     )
 
     return train_loader, val_loader, test_loader
+
+
+def get_git_info() -> None:
+    """Get the git branch name and the git SHA."""
+    try:
+        c = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            timeout=10,
+            stdout=subprocess.PIPE,
+        )
+        git_branch_name = c.stdout.decode().strip()
+        c = subprocess.run(
+            ["git", "rev-parse", "HEAD"], timeout=10, stdout=subprocess.PIPE
+        )
+        git_sha = c.stdout.decode().strip()
+        logging.info(f"Git branch: {git_branch_name}, commit: {git_sha}\n")
+    except subprocess.TimeoutExpired as e:
+        logging.exception(e)
+        logging.warn("Git info not found. Moving right along...")
 
 
 def train_and_validate(

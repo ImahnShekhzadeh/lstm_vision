@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y curl && \
     curl -O https://repo.anaconda.com/miniconda/$MINICONDA_VERSION && \
     /bin/bash $MINICONDA_VERSION -b -p /opt/conda && \
     rm $MINICONDA_VERSION && \
+    apt-get -y install git && \
     apt-get clean
 
 # Add `conda` to path
@@ -29,15 +30,6 @@ RUN conda install -c conda-forge pip
 # should also work for CUDA 12.2
 RUN conda install -y pytorch=2.1.* torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia
 
-# Install JAX with CUDA support using `pip` via `conda`
-# `-v` flag is for verbose output
-# When I use "jax[cuda12_pip]", I get a version mismatch with cuPI
-#RUN python --version && pip install -v --upgrade\
-#    jax\
-#    jaxlib==0.4.20+cuda11.cudnn86\
-#    -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-RUN pip install --upgrade "jax[cuda11_pip]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-
 # Set the working directory
 WORKDIR /app
 
@@ -53,6 +45,9 @@ RUN pip install --upgrade pip && \
 
 # Make port 80 available to the world outside this container
 EXPOSE 80
+
+# Git
+RUN git config --global --add safe.directory /app
 
 # Ensure `run_scripts.sh` is executable
 RUN chmod +x ./run_scripts.sh
