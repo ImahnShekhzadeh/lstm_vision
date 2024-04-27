@@ -2,11 +2,9 @@ import gc
 import json
 import logging
 import os
-import shutil
 import subprocess
 from argparse import ArgumentParser, Namespace
 from copy import deepcopy
-from datetime import datetime as dt
 from math import ceil
 from time import perf_counter
 from typing import Dict, Optional, Tuple
@@ -16,10 +14,8 @@ import numpy as np
 import torch
 import wandb
 from prettytable import PrettyTable
-from termcolor import colored
 from torch import Tensor, autocast
 from torch import distributed as dist
-from torch import multiprocessing as mp
 from torch import nn
 from torch.cuda.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -179,15 +175,8 @@ def check_args(args: Namespace) -> None:
         args: Arguments provided by the user.
     """
 
-    # create saving dir if non-existent, check if saving path is empty, and
-    # copy JSON config file there
+    # create saving dir if non-existent
     os.makedirs(args.saving_path, exist_ok=True)
-    if not len(os.listdir(args.saving_path)) == 0:
-        raise ValueError(
-            f"Saving path `{args.saving_path}` is not empty! Please provide "
-            "another path."
-        )
-    shutil.copy(src=args.config, dst=args.saving_path)
 
     assert args.compile_mode in [
         None,
