@@ -97,7 +97,9 @@ def main(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n"
         )
-        summary(model, (args.batch_size, seq_length, inp_size))
+        logging.info(
+            f"\n{summary(model, (args.batch_size, seq_length, inp_size))}\n"
+        )
     else:
         wandb_logging = False
 
