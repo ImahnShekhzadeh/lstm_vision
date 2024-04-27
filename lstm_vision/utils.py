@@ -178,6 +178,9 @@ def check_args(args: Namespace) -> None:
     # create saving dir if non-existent
     os.makedirs(args.saving_path, exist_ok=True)
 
+    if args.num_additional_cps > args.num_epochs:
+        args.num_additional_cps = args.num_epochs
+
     assert args.compile_mode in [
         None,
         "default",
@@ -187,6 +190,8 @@ def check_args(args: Namespace) -> None:
         f"``{args.compile_mode}`` is not a valid compile mode in "
         "``torch.compile()``."
     )
+    if args.pin_memory and not torch.cuda.is_available():
+        args.pin_memory = False  # pinned memory only available for GPUs
     if args.pin_memory:
         assert args.num_workers > 0, (
             "With pinned memory, ``num_workers > 0`` should be chosen, cf. "
@@ -551,19 +556,8 @@ def train_and_validate(
             )
         model.train()
 
-    if world_size is not None:
-        num_iters = (
-            ceil(
-                len(train_loader.dataset)
-                / (world_size * train_loader.batch_size)
-            )
-            * num_epochs
-        )
-    else:
-        num_iters = (
-            ceil(len(train_loader.dataset) / train_loader.batch_size)
-            * num_epochs
-        )
+    # number of iterations per device
+    num_iters = len(train_loader) * num_epochs
 
     if rank in [0, torch.device("cpu")]:
         end_timer_and_print(
