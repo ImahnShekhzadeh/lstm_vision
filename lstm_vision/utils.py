@@ -350,6 +350,7 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    timestamp: str,
     num_additional_cps: int = 0,
     saving_path: str = None,
     label_smoothing: float = 0.0,
@@ -370,6 +371,7 @@ def train_and_validate(
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
+        timestamp: Timestamp of the current run.
         num_additional_cps: Number of checkpoints to save (one is always saved
             at the lowest validation loss)
         saving_path: Directory path to save the checkpoints.
@@ -533,7 +535,7 @@ def train_and_validate(
                 state=checkpoint,
                 filename=os.path.join(
                     saving_path,
-                    f"cp_epoch_{epoch}.pt",
+                    f"cp_epoch_{epoch}_{timestamp}.pt",
                 ),
             )
 
@@ -555,7 +557,8 @@ def train_and_validate(
                 f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
                 f"Mean train/val loss: {train_losses[epoch]:.4f}/"
                 f"{val_losses[epoch]:.4f}\tTrain/val acc: "
-                f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} %\n"
+                f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} "
+                "%\n"
             )
         model.train()
 
@@ -764,9 +767,10 @@ def load_checkpoint(
 
 
 def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
-    """Creates a model checkpoint to save and load a model.
+    """
+    Save checkpoint.
 
-    Params:
+    Args:
         state: State of model and optimizer in a dictionary.
         filename: The name of the checkpoint.
     """
@@ -854,6 +858,7 @@ def get_confusion_matrix(
     use_amp: bool,
     saving_path: str,
     device: int | torch.device,
+    timestamp: str,
 ) -> np.ndarray:
     """
     Produce a confusion matrix based on the test set.
@@ -865,6 +870,7 @@ def get_confusion_matrix(
         use_amp: Whether to use automatic mixed precision.
         saving_path: Saving path where the confusion matrix is stored.
         device: Device on which the code is executed.
+        timestamp: Timestamp of the current run.
 
     Returns:
         Confusion matrix.
@@ -909,7 +915,7 @@ def get_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            f"confusion_matrix.pdf",
+            f"confusion_matrix_{timestamp}.pdf",
         ),
         bbox_inches="tight",
         pad_inches=0.01,

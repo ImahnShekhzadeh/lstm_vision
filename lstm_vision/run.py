@@ -141,6 +141,7 @@ def main(
         use_amp=args.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,
+        timestamp=args.timestamp,
         num_additional_cps=args.num_additional_cps,
         saving_path=args.saving_path,
         label_smoothing=args.label_smoothing,
@@ -157,7 +158,7 @@ def main(
             state=checkpoint,
             filename=os.path.join(
                 args.saving_path,
-                f"lstm_cp.pt",
+                f"lstm_cp_{args.timestamp}.pt",
             ),
         )
 
@@ -192,6 +193,7 @@ def main(
             use_amp=args.use_amp,
             saving_path=args.saving_path,
             device=rank,
+            timestamp=args.timestamp,
         )
 
         if wandb_logging:
@@ -203,21 +205,21 @@ if __name__ == "__main__":
     args = retrieve_args(parser)
 
     # Get timestamp
-    now = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
+    args.timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
 
     # Setup Weights & Biases
     if args.wandb__api_key is not None:
         wandb.login(key=args.wandb__api_key)
         wandb.init(
             project="lstm_vision",
-            name=now,
+            name=args.timestamp,
             config=args,
         )
 
     # Setup basic configuration for logging
     log_level = logging.INFO
     logging.basicConfig(
-        filename=os.path.join(args.saving_path, f"run_{now[:-3]}.log"),
+        filename=os.path.join(args.saving_path, f"run_{args.timestamp}.log"),
         level=log_level,
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
