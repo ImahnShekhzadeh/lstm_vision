@@ -2,7 +2,7 @@ import logging
 import os
 from copy import deepcopy
 from time import perf_counter
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -83,101 +83,37 @@ def train_and_validate(
 
     for epoch in range(num_epochs):
         t0 = start_timer(device=rank)
-        trainingLoss_perEpoch, valLoss_perEpoch = [], []
-        num_correct, num_samples, val_num_correct, val_num_samples = 0, 0, 0, 0
 
-        for batch_idx, (images, labels) in enumerate(train_loader):
-            model.train()
-            labels = labels.to(rank)
-            optimizer.zero_grad()
-
-            with autocast(
-                device_type=labels.device.type,
-                dtype=torch.float16,
-                enabled=use_amp,
-            ):
-                output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
-                loss = cce_mean(output, labels)
-
-            scaler.scale(loss).backward()
-            if max_norm is not None:
-                scaler.unscale_(optimizer)
-                for param_group in optimizer.param_groups:
-                    clip_grad_norm_(param_group["params"], max_norm=max_norm)
-            scaler.step(optimizer)
-            scaler.update()
-
-            trainingLoss_perEpoch.append(loss.cpu().item() * output.shape[0])
-
-            # calculate accuracy
-            with torch.no_grad():
-                model.eval()
-                batch_size = output.shape[0]
-                max_indices = output.argmax(dim=1, keepdim=False)
-                num_correct += (max_indices == labels).sum().cpu().item()
-                num_samples += batch_size
-
-            if rank in [0, torch.device("cpu")]:
-                print__batch_info(
-                    batch_idx=batch_idx,
-                    loader=train_loader,
-                    epoch=epoch,
-                    loss=loss,
-                    mode="train",
-                    frequency=freq_output__train,
-                )
-
+        trainingLoss_perEpoch, num_correct, num_samples = train_one_epoch(
+            train_loader=train_loader,
+            model=model,
+            optimizer=optimizer,
+            loss_fn=cce_mean,
+            scaler=scaler,
+            rank=rank,
+            use_amp=use_amp,
+            epoch=epoch,
+            max_norm=max_norm,
+            freq_output__train=freq_output__train,
+        )
         train_losses.append(
             np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
         )
         train_accs.append(num_correct / num_samples)
 
-        # validation stuff:
-        with torch.no_grad():
-            model.eval()
-
-            for val_batch_idx, (val_images, val_labels) in enumerate(
-                val_loader
-            ):
-                val_labels = val_labels.to(rank)
-
-                with autocast(
-                    device_type=val_labels.device.type,
-                    dtype=torch.float16,
-                    enabled=use_amp,
-                ):
-                    val_output = model(
-                        val_images.squeeze_(dim=1).to(rank)
-                    )  # `[N, C]`
-                    val_loss = (
-                        cce_mean(val_output, val_labels).cpu().item()
-                        * val_output.shape[0]
-                    )
-
-                valLoss_perEpoch.append(val_loss)
-
-                # calculate accuracy
-                val_max_indices = val_output.argmax(dim=1, keepdim=False)
-                val_num_correct += (
-                    (val_max_indices == val_labels).cpu().sum().item()
-                )
-                batch_size = val_output.shape[0]
-                val_num_samples += batch_size
-
-                if rank in [0, torch.device("cpu")]:
-                    print__batch_info(
-                        batch_idx=val_batch_idx,
-                        loader=val_loader,
-                        epoch=epoch,
-                        loss=val_loss / batch_size,
-                        mode="val",
-                        frequency=freq_output__val,
-                    )
-
+        valLoss_perEpoch, num_correct, num_samples = validate_one_epoch(
+            model=model,
+            val_loader=val_loader,
+            loss_fn=cce_mean,
+            rank=rank,
+            use_amp=use_amp,
+            epoch=epoch,
+            freq_output__val=freq_output__val,
+        )
         val_losses.append(
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
         )
-        val_accs.append(val_num_correct / val_num_samples)
+        val_accs.append(num_correct / num_samples)
 
         # update checkpoint dict if val loss has decreased
         if val_losses[epoch] < min_val_loss:
@@ -232,7 +168,6 @@ def train_and_validate(
                 f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} "
                 "%\n"
             )
-        model.train()
 
     # number of iterations per device
     num_iters = len(train_loader) * num_epochs
@@ -247,3 +182,151 @@ def train_and_validate(
         )
 
     return checkpoint_best
+
+
+def train_one_epoch(
+    train_loader: DataLoader,
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: nn.modules.loss._WeightedLoss,
+    scaler: torch.cuda.amp.grad_scaler.GradScaler,
+    rank: int | torch.device,
+    use_amp: bool,
+    epoch: int,
+    max_norm: Optional[float] = None,
+    freq_output__train: Optional[int] = 10,
+) -> Tuple[List[float], int, int]:
+    """
+    Train model for one epoch.
+
+    Args:
+        train_loader: Dataloader for the training set.
+        model: Model to train.
+        optimizer: Optimizer to use.
+        loss_fn: Loss function.
+        scaler: GradScaler for automatic mixed precision.
+        rank: Device on which the code is executed.
+        use_amp: Whether to use automatic mixed precision.
+        epoch: Current epoch index.
+        max_norm: Maximum norm of the gradients.
+        freq_output__train: Frequency at which to print the training info.
+
+    Returns:
+        Training loss for all batches for the single epoch, number of correct
+        predictions, and number of samples.
+    """
+
+    trainingLoss_perEpoch = []
+    num_correct, num_samples = 0, 0  # for calculating accuracy
+
+    for batch_idx, (images, labels) in enumerate(train_loader):
+        model.train()
+        labels = labels.to(rank)
+        optimizer.zero_grad()
+
+        with autocast(
+            device_type=labels.device.type,
+            dtype=torch.float16,
+            enabled=use_amp,
+        ):
+            output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
+            loss = loss_fn(output, labels)
+
+        scaler.scale(loss).backward()
+        if max_norm is not None:
+            scaler.unscale_(optimizer)
+            for param_group in optimizer.param_groups:
+                clip_grad_norm_(param_group["params"], max_norm=max_norm)
+        scaler.step(optimizer)
+        scaler.update()
+
+        trainingLoss_perEpoch.append(loss.cpu().item() * output.shape[0])
+
+        # calculate accuracy
+        with torch.no_grad():
+            model.eval()
+            batch_size = output.shape[0]
+            max_indices = output.argmax(dim=1, keepdim=False)
+            num_correct += (max_indices == labels).sum().cpu().item()
+            num_samples += batch_size
+
+        if rank in [0, torch.device("cpu")]:
+            print__batch_info(
+                batch_idx=batch_idx,
+                loader=train_loader,
+                epoch=epoch,
+                loss=loss,
+                mode="train",
+                frequency=freq_output__train,
+            )
+
+    return trainingLoss_perEpoch, num_correct, num_samples
+
+
+def validate_one_epoch(
+    model: nn.Module,
+    val_loader: DataLoader,
+    loss_fn: nn.modules.loss._WeightedLoss,
+    rank: int | torch.device,
+    use_amp: bool,
+    epoch: int,
+    freq_output__val: Optional[int] = 10,
+) -> Tuple[List[float], int, int]:
+    """
+    Validate model for one epoch.
+
+    Args:
+        model: Model to validate.
+        val_loader: Dataloader for the validation set.
+        loss_fn: Loss function.
+        rank: Device on which the code is executed.
+        use_amp: Whether to use automatic mixed precision.
+        epoch: Current epoch index.
+        freq_output__val: Frequency at which to print the validation info.
+
+    Returns:
+        Validation loss for all batches for the single epoch, number of correct
+        predictions, and number of samples.
+    """
+    with torch.no_grad():
+        valLoss_perEpoch = []
+        val_num_correct, val_num_samples = 0, 0
+        model.eval()
+
+        for val_batch_idx, (val_images, val_labels) in enumerate(val_loader):
+            val_labels = val_labels.to(rank)
+
+            with autocast(
+                device_type=val_labels.device.type,
+                dtype=torch.float16,
+                enabled=use_amp,
+            ):
+                val_output = model(
+                    val_images.squeeze_(dim=1).to(rank)
+                )  # `[N, C]`
+                val_loss = (
+                    loss_fn(val_output, val_labels).cpu().item()
+                    * val_output.shape[0]
+                )
+
+            valLoss_perEpoch.append(val_loss)
+
+            # calculate accuracy
+            val_max_indices = val_output.argmax(dim=1, keepdim=False)
+            val_num_correct += (
+                (val_max_indices == val_labels).cpu().sum().item()
+            )
+            batch_size = val_output.shape[0]
+            val_num_samples += batch_size
+
+            if rank in [0, torch.device("cpu")]:
+                print__batch_info(
+                    batch_idx=val_batch_idx,
+                    loader=val_loader,
+                    epoch=epoch,
+                    loss=val_loss / batch_size,
+                    mode="val",
+                    frequency=freq_output__val,
+                )
+
+    return valLoss_perEpoch, val_num_correct, val_num_samples
