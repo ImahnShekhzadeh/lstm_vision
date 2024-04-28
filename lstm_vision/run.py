@@ -9,14 +9,13 @@ import wandb
 from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
-from train import train_and_validate
 
+from evaluate import check_accuracy, get_confusion_matrix
 from options import get_parser
+from train import train_and_validate
 from utils import (
-    check_accuracy,
     cleanup,
     count_parameters,
-    get_confusion_matrix,
     get_dataloaders,
     get_datasets,
     get_git_info,
