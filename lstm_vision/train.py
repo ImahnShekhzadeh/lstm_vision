@@ -218,9 +218,9 @@ def train_one_epoch(
 
     trainingLoss_perEpoch = []
     num_correct, num_samples = 0, 0  # for calculating accuracy
+    model.train()
 
     for batch_idx, (images, labels) in enumerate(train_loader):
-        model.train()
         labels = labels.to(rank)
         optimizer.zero_grad()
 
@@ -244,7 +244,6 @@ def train_one_epoch(
 
         # calculate accuracy
         with torch.no_grad():
-            model.eval()
             batch_size = output.shape[0]
             max_indices = output.argmax(dim=1, keepdim=False)
             num_correct += (max_indices == labels).sum().cpu().item()
