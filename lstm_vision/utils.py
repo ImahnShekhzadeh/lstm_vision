@@ -554,11 +554,11 @@ def check_accuracy(
     use_amp: bool,
     mode: str,
     device: int | torch.device,
-):
+) -> None:
     """
     Check the accuracy of a given model on a given dataset.
 
-    Params:
+    Args:
         loader: Dataloader of the dataset for which to check the accuracy.
         model: Model.
         use_amp: Whether to use automatic mixed precision.
@@ -567,9 +567,11 @@ def check_accuracy(
     """
     assert mode in ["train", "test"]
 
-    model.eval()
-    num_correct = 0
-    num_samples = 0
+    if mode == "train":
+        model.train()
+    else:
+        model.eval()
+    num_correct, num_samples = 0, 0
 
     for images, labels in loader:
         labels = labels.to(device)
