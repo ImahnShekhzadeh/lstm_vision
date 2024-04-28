@@ -648,6 +648,13 @@ def get_confusion_matrix(
     # Convert PyTorch tensor to numpy array:
     fig = plt.figure()
     confusion_matrix = confusion_matrix.numpy()
+    font = {"size": 7}
+    for (i, j), label in np.ndenumerate(confusion_matrix):
+        plt.text(j, i, f"{label:.3f}", ha="center", va="center", fontdict=font)
+        plt.text(j, i, f"{label:.3f}", ha="center", va="center", fontdict=font)
+    tick_marks = np.arange(start=0, stop=num_classes)
+    plt.xticks(ticks=tick_marks)
+    plt.yticks(ticks=tick_marks)
     plt.imshow(confusion_matrix, cmap="jet")
     plt.colorbar()
     plt.xlabel("Predicted Label")
