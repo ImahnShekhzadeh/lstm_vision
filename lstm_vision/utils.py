@@ -438,7 +438,6 @@ def train_and_validate(
                     batch_idx=batch_idx,
                     loader=train_loader,
                     epoch=epoch,
-                    t_0=t0,
                     loss=loss,
                     mode="train",
                     frequency=freq_output__train,
@@ -481,7 +480,6 @@ def train_and_validate(
                         batch_idx=val_batch_idx,
                         loader=val_loader,
                         epoch=epoch,
-                        t_0=t0,
                         loss=val_loss / batch_size,
                         mode="val",
                         frequency=freq_output__val,
@@ -669,7 +667,6 @@ def print__batch_info(
     batch_idx: int,
     loader: DataLoader,
     epoch: int,
-    t_0: float,
     loss: Tensor,
     frequency: int = 1,
 ) -> None:
@@ -681,7 +678,6 @@ def print__batch_info(
         batch_idx: Batch index.
         loader: Train or validation Dataloader.
         epoch: Current epoch.
-        t_0: Time at which the training started.
         loss: Loss of the current batch.
         frequency: Frequency at which to print the batch info.
     """
