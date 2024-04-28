@@ -150,7 +150,6 @@ def main(
         freq_output__train=args.freq_output__train,
         freq_output__val=args.freq_output__val,
         max_norm=args.max_norm,
-        world_size=world_size,
         wandb_logging=wandb_logging,
     )
 
