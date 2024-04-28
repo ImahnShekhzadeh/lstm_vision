@@ -9,6 +9,7 @@ import wandb
 from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
+from train import train_and_validate
 
 from options import get_parser
 from utils import (
@@ -24,7 +25,6 @@ from utils import (
     retrieve_args,
     save_checkpoint,
     setup,
-    train_and_validate,
 )
 
 
