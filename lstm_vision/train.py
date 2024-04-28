@@ -70,7 +70,7 @@ def train_and_validate(
         ), "Please provide a valid saving path for the additional checkpoints"
         os.makedirs(saving_path, exist_ok=True)
 
-    # define loss functions:
+    # define loss function
     cce_mean = nn.CrossEntropyLoss(
         reduction="mean", label_smoothing=label_smoothing
     )
@@ -127,6 +127,11 @@ def train_and_validate(
                     frequency=freq_output__train,
                 )
 
+        train_losses.append(
+            np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
+        )
+        train_accs.append(num_correct / num_samples)
+
         # validation stuff:
         with torch.no_grad():
             model.eval()
@@ -169,15 +174,9 @@ def train_and_validate(
                         frequency=freq_output__val,
                     )
 
-        train_losses.append(
-            np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
-        )
         val_losses.append(
             np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
         )
-
-        # Calculate accuracies for each epoch:
-        train_accs.append(num_correct / num_samples)
         val_accs.append(val_num_correct / val_num_samples)
 
         # update checkpoint dict if val loss has decreased
