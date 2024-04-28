@@ -668,7 +668,7 @@ def print__batch_info(
     loader: DataLoader,
     epoch: int,
     loss: Tensor,
-    frequency: int = 1,
+    frequency: Optional[int] = 1,
 ) -> None:
     """
     Print the current batch information.
@@ -682,9 +682,8 @@ def print__batch_info(
         frequency: Frequency at which to print the batch info.
     """
     assert mode.lower() in ["train", "val"]
-    assert type(frequency) == int
 
-    if batch_idx % frequency == 0:
+    if frequency is not None and batch_idx % frequency == 0:
         current_samples = (batch_idx + 1) * loader.batch_size
         if (
             not isinstance(loader.dataset, IterableDataset)
