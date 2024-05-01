@@ -303,12 +303,9 @@ def validate_one_epoch(
                 val_output = model(
                     val_images.squeeze_(dim=1).to(rank)
                 )  # `[N, C]`
-                val_loss = (
-                    loss_fn(val_output, val_labels).cpu().item()
-                    * val_output.shape[0]
-                )
+                val_loss = loss_fn(val_output, val_labels)
 
-            valLoss_perEpoch.append(val_loss)
+            valLoss_perEpoch.append(val_loss.item() * val_output.shape[0])
 
             # calculate accuracy
             val_max_indices = val_output.argmax(dim=1, keepdim=False)
