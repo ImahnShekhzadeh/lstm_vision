@@ -493,6 +493,8 @@ def load_checkpoint(
 
     if "epoch" in checkpoint.keys():
         loading_msg += f" It had been saved at epoch {checkpoint['epoch']}."
+    elif "step" in checkpoint.keys():
+        loading_msg += f" It had been saved at step {checkpoint['step']}."
 
     if "val_loss" in checkpoint.keys():
         loading_msg += f" Validation loss: {checkpoint['val_loss']:.4f}."
