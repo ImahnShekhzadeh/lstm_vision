@@ -28,10 +28,7 @@ def check_accuracy(
     """
     assert mode in ["train", "test"]
 
-    if mode == "train":
-        model.train()
-    else:
-        model.eval()
+    model.eval()
     num_correct, num_samples = 0, 0
 
     for images, labels in loader:
