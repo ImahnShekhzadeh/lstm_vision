@@ -320,7 +320,7 @@ def validate_one_epoch(
                     batch_idx=val_batch_idx,
                     loader=val_loader,
                     epoch=epoch,
-                    loss=val_loss / batch_size,
+                    loss=val_loss,
                     mode="val",
                     frequency=freq_output__val,
                 )
