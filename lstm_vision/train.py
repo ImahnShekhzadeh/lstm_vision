@@ -265,7 +265,7 @@ def train_one_epoch(
                 batch_idx=batch_idx,
                 loader=train_loader,
                 epoch=epoch,
-                loss=loss,
+                loss=loss * num_grad_accum_steps,
                 mode="train",
                 frequency=freq_output__train,
             )
