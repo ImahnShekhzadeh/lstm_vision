@@ -24,6 +24,7 @@ def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     num_epochs: int,
+    num_grad_accum_steps: int,
     rank: int | torch.device,
     use_amp: bool,
     train_loader: DataLoader,
@@ -44,6 +45,7 @@ def train_and_validate(
         model: Model to train.
         optimizer: Optimizer to use.
         num_epochs: Number of epochs to train the model.
+        num_grad_accum_steps: Number of gradient accumulation steps.
         rank: Device on which the code is executed.
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
@@ -89,6 +91,7 @@ def train_and_validate(
             model=model,
             optimizer=optimizer,
             loss_fn=cce_mean,
+            num_grad_accum_steps=num_grad_accum_steps,
             scaler=scaler,
             rank=rank,
             use_amp=use_amp,
@@ -189,6 +192,7 @@ def train_one_epoch(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.modules.loss._WeightedLoss,
+    num_grad_accum_steps: int,
     scaler: torch.cuda.amp.grad_scaler.GradScaler,
     rank: int | torch.device,
     use_amp: bool,
@@ -204,6 +208,7 @@ def train_one_epoch(
         model: Model to train.
         optimizer: Optimizer to use.
         loss_fn: Loss function.
+        num_grad_accum_steps: Number of gradient accumulation steps.
         scaler: GradScaler for automatic mixed precision.
         rank: Device on which the code is executed.
         use_amp: Whether to use automatic mixed precision.
@@ -222,7 +227,6 @@ def train_one_epoch(
 
     for batch_idx, (images, labels) in enumerate(train_loader):
         labels = labels.to(rank)
-        optimizer.zero_grad()
 
         with autocast(
             device_type=labels.device.type,
@@ -230,17 +234,24 @@ def train_one_epoch(
             enabled=use_amp,
         ):
             output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
-            loss = loss_fn(output, labels)
+            loss = loss_fn(output, labels) / num_grad_accum_steps
 
         scaler.scale(loss).backward()
-        if max_norm is not None:
-            scaler.unscale_(optimizer)
-            for param_group in optimizer.param_groups:
-                clip_grad_norm_(param_group["params"], max_norm=max_norm)
-        scaler.step(optimizer)
-        scaler.update()
+        if ((batch_idx + 1) % num_grad_accum_steps == 0) or (
+            batch_idx + 1 == len(train_loader)
+        ):
+            # https://pytorch.org/docs/stable/notes/amp_examples.html
+            if max_norm is not None:
+                scaler.unscale_(optimizer)
+                for param_group in optimizer.param_groups:
+                    clip_grad_norm_(param_group["params"], max_norm=max_norm)
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad()
 
-        trainingLoss_perEpoch.append(loss.cpu().item() * output.shape[0])
+        trainingLoss_perEpoch.append(
+            loss.cpu().item() * num_grad_accum_steps * output.shape[0]
+        )
 
         # calculate accuracy
         with torch.no_grad():

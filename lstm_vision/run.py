@@ -138,6 +138,7 @@ def main(
         model=model,
         optimizer=optimizer,
         num_epochs=args.num_epochs,
+        num_grad_accum_steps=args.num_grad_accum_steps,
         rank=rank,
         use_amp=args.use_amp,
         train_loader=train_loader,

@@ -131,6 +131,15 @@ def get_parser() -> argparse.ArgumentParser:
         help="Number of batches that are used for one ADAM update rule.",
     )
     parser.add_argument(
+        "--num_grad_accum_steps",
+        type=int,
+        default=1,
+        help=(
+            "Number of gradient accumulation steps, effective batch size is "
+            "`batch_size * num_grad_accum_steps`."
+        ),
+    )
+    parser.add_argument(
         "--loading_path",
         type=str,
         default=None,

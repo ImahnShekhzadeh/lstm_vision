@@ -1,5 +1,6 @@
 {
     "batch_size": 16384,
+    "num_grad_accum_steps": 1,
     "bidirectional": true,
     "dropout_rate": 0.2,
     "freq_output__train": null,
