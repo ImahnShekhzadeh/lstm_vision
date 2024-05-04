@@ -41,9 +41,9 @@ def main(
         args: command line arguments
     """
 
-    # set random seed
+    # set random seed, each process gets different seed
     if args.seed_number is not None:
-        torch.manual_seed(args.seed_number)
+        torch.manual_seed(args.seed_number + rank)
 
     if args.use_ddp:
         setup(
