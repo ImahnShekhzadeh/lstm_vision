@@ -37,7 +37,6 @@ WORKDIR /app
 # docker container
 COPY setup.py .
 COPY pyproject.toml .
-COPY run_scripts.sh .
 
 # Install packages in `pyproject.toml` via `pip`
 RUN pip install --upgrade pip && \
@@ -48,13 +47,3 @@ EXPOSE 80
 
 # Git
 RUN git config --global --add safe.directory /app
-
-# Ensure `run_scripts.sh` is executable
-RUN chmod +x ./run_scripts.sh
-
-# Execute `run_scripts.sh` as the entrypoint
-ENTRYPOINT ["./run_scripts.sh"]
-
-# Run the script (explicitly use `python3` to avoid any confusion)
-# Script is only run when the container is run
-# CMD ["python3", "-B", "test_script.py"]

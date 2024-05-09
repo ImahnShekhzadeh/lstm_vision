@@ -59,7 +59,7 @@ options:
 I ran the script `run.py` as follows:
 ```
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 --config configs/conf.json
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 python -B /app/lstm_vision/run.py --config configs/conf.json
 ```
 
 The options for training I used are in `configs/conf.json`.
