@@ -89,10 +89,10 @@ All results were obtained on a single GPU. For this small model, I do not recomm
 
 Training a bidirectional LSTM with roughly `3.9`M params for `50` epochs results in,
 ```
-Train data: Got 49824/50000 with accuracy 99.60 %
-Test data: Got 9899/10000 with accuracy 99.05 %
+Train data: Got 49839/50000 with accuracy 99.68 %
+Test data: Got 9906/10000 with accuracy 99.06 %
 ```
-On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `50` epochs takes about `232` s, and in total about `12.56` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.56` GB VRAM, decrease the batch size.
+On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `50` epochs takes about `232` s, and in total about `12.61` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.json`, about double the memory will be required. If you have a GPU with less than already `12.61` GB VRAM, decrease the batch size.
 
 I also tried the flag `--compile_mode` (with all modes "default", "reduce-overhead" & "max-autotune"), and noticed that the runtime slightly _increases_ when using the MNIST dataset. This happens, since the warmup phase, cf. [here](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html), takes a long time, and after the warmup phase, the runtime epoch is comparable to no compilation. However, for other CV datasets (e.g. CIFAR100) and other model architectures, this might change! Also, please note that `torch.compile(..., full_graph=False)` has to be used, since `TorchDynamo` does not allow `full_graph=True` for RNNs/GRUs/LSTMs.
 
