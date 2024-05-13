@@ -66,6 +66,7 @@ def main(
         num_workers=args.num_workers,
         pin_memory=args.pin_memory,
         use_ddp=args.use_ddp,
+        seed_number=args.seed_number,
     )
 
     # define sequence length, input size of LSTM and number of classes based

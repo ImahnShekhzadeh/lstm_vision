@@ -2,11 +2,13 @@ import gc
 import json
 import logging
 import os
+import random
 import subprocess
 from argparse import ArgumentParser, Namespace
 from time import perf_counter
 from typing import Dict, Optional, Tuple
 
+import numpy as np
 import torch
 from prettytable import PrettyTable
 from torch import Tensor
@@ -259,6 +261,21 @@ def get_datasets(
     return train_subset, val_subset, test_dataset
 
 
+def seed_worker(worker_id: int) -> None:
+    """
+    Seed the worker for the dataloader. Function copy-pasted from [1].
+
+    Args:
+        worker_id: Worker ID.
+
+    References:
+        [1] https://pytorch.org/docs/stable/notes/randomness.html#dataloader
+    """
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
 def get_dataloaders(
     train_dataset: datasets.VisionDataset,
     val_dataset: datasets.VisionDataset,
@@ -267,6 +284,7 @@ def get_dataloaders(
     num_workers: int,
     pin_memory: bool,
     use_ddp: bool = False,
+    seed_number: Optional[int] = None,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     """
     Get the dataloaders for the train, validation and test set.
@@ -279,6 +297,7 @@ def get_dataloaders(
         num_workers: Number of subprocesses used in the dataloaders.
         pin_memory: Whether tensors are copied into CUDA pinned memory.
         use_ddp: Whether to use DDP.
+        seed_number: Seed number for the `torch.Generator` object if provided.
 
     Returns:
         Train, val and test loader
@@ -293,12 +312,16 @@ def get_dataloaders(
         dataset=train_dataset,
         sampler=DistributedSampler(train_dataset) if use_ddp else None,
         shuffle=False if use_ddp else True,
+        worker_init_fn=seed_worker,
+        generator=torch.Generator().manual_seed(seed_number),
         **loader_kwargs,
     )
     val_loader = DataLoader(
         dataset=val_dataset,
         sampler=DistributedSampler(val_dataset) if use_ddp else None,
         shuffle=False,
+        worker_init_fn=seed_worker,
+        generator=torch.Generator().manual_seed(seed_number),
         **loader_kwargs,
     )
     test_loader = DataLoader(
