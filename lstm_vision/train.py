@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from copy import deepcopy
 from time import perf_counter
@@ -187,8 +188,17 @@ def train_and_validate(
     if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
         measurement = monitor.end_window("training")
 
-    # number of iterations per device
-    num_iters = len(train_loader) * num_epochs
+    # total number of training iterations
+    if torch.cuda.is_available():
+        num_devices = torch.cuda.device_count()
+    else:
+        num_devices = 1
+    num_iters = (
+        math.ceil(
+            len(train_loader.dataset) / (train_loader.batch_size * num_devices)
+        )
+        * num_epochs
+    )
 
     if rank in [0, torch.device("cpu")]:
         log_training_stats(
