@@ -380,8 +380,11 @@ def start_timer(device: torch.device | int) -> float:
     return perf_counter()
 
 
-def end_timer_and_print(
-    start_time: float, device: torch.device | int, local_msg: str = ""
+def log_training_stats(
+    start_time: float,
+    energy_consump: float,
+    device: torch.device | int,
+    local_msg: str = "",
 ) -> float:
     """
     End the timer and print the time it took to execute the code as well as the
@@ -389,6 +392,7 @@ def end_timer_and_print(
 
     Args:
         start_time: Time at which the training started.
+        energy_consump: Energy consumption of the entire training in Joules.
         device: Device on which the code was executed. Can also be an int
             representing the GPU ID.
         local_msg: Local message to print.
@@ -412,6 +416,8 @@ def end_timer_and_print(
     msg = f"{local_msg}\n\tTotal execution time = {time_diff:.3f} [sec]"
     if device.type == "cuda":
         msg += (
+            f"\n\tEnergy consumption of entire training = "
+            f"{energy_consump / 1e3:.3f} [kJ]"
             f"\n\tMax memory used by tensors = "
             f"{torch.cuda.max_memory_allocated(device=device) / 1024**2:.3f} "
             "[MB]"

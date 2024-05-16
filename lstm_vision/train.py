@@ -11,9 +11,10 @@ from torch import autocast, nn
 from torch.cuda.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
+from zeus.monitor import ZeusMonitor
 
 from utils import (
-    end_timer_and_print,
+    log_training_stats,
     print__batch_info,
     save_checkpoint,
     start_timer,
@@ -77,11 +78,21 @@ def train_and_validate(
         reduction="mean", label_smoothing=label_smoothing
     )
 
+    # auxiliary variables
     start_time = start_timer(device=rank)
     train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
+    # AMP
     scaler = GradScaler(enabled=use_amp)
+
+    # measure energy consumption (rank 0 already measures energy consumption
+    # of all GPUs)
+    if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
+        monitor = ZeusMonitor(
+            gpu_indices=[i for i in range(torch.cuda.device_count())]
+        )
+        monitor.begin_window("training")
 
     for epoch in range(num_epochs):
         t0 = start_timer(device=rank)
@@ -172,12 +183,17 @@ def train_and_validate(
                 "%\n"
             )
 
+    # stop energy consumption measurement
+    if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
+        measurement = monitor.end_window("training")
+
     # number of iterations per device
     num_iters = len(train_loader) * num_epochs
 
     if rank in [0, torch.device("cpu")]:
-        end_timer_and_print(
+        log_training_stats(
             start_time=start_time,
+            energy_consump=measurement.total_energy,
             device=rank,
             local_msg=(
                 f"Training {num_epochs} epochs ({num_iters} iterations)"

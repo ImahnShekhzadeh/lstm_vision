@@ -19,6 +19,7 @@ dependencies = [
     "python-dotenv~=1.0",
     "matplotlib~=3.2",
     "pre-commit",
+    "zeus-ml~=0.9"
 ]
 
 [tool.isort]
