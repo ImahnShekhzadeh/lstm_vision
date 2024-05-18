@@ -6,7 +6,7 @@ from datetime import datetime as dt
 import hydra
 import torch
 import wandb
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
@@ -107,7 +107,9 @@ def main(cfg: DictConfig) -> None:
             wandb.init(
                 project="lstm_vision",
                 name=timestamp,
-                config=cfg,
+                config=OmegaConf.to_container(
+                    cfg, resolve=True, throw_on_missing=True
+                ),
             )
 
         """
