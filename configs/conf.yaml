@@ -1,0 +1,38 @@
+dataset:
+  channels_img: 1
+  train_split: 0.8333333333333334  # 5 / 6
+
+dataloading:
+  num_workers: 4
+  pin_memory: true
+
+model:
+  loading_path: null
+  num_layers: 3
+  hidden_size: 256
+  bidirectional: true
+  dropout: 0.2
+
+optim:
+  learning_rate: 2e-3
+  beta_1: 0.9
+  beta_2: 0.999
+  eps: 1e-8
+  weight_decay: 0.0
+
+training:
+  seed_number: 0
+  use_ddp: false
+  use_amp: true  # automatic mixed precision
+  batch_size: 16384
+  max_norm: null  # max norm for gradient clipping
+  num_grad_accum_steps: 1
+  num_epochs: 50
+  wandb__api_key: null
+  compile_mode: null  # `torch.compile()`
+  num_additional_cps: 2
+  saving_path: "outputs/0"
+  label_smoothing: 0.1
+  freq_output__train: null  # logging frequency training
+  freq_output__val: null    # logging frequency validation
+

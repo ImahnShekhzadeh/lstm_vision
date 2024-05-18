@@ -4,12 +4,12 @@ import logging
 import os
 import random
 import subprocess
-from argparse import ArgumentParser, Namespace
 from time import perf_counter
 from typing import Dict, Optional, Tuple
 
 import numpy as np
 import torch
+from omegaconf import DictConfig
 from prettytable import PrettyTable
 from torch import Tensor
 from torch import distributed as dist
@@ -121,89 +121,49 @@ def get_model(
     return model
 
 
-def retrieve_args(parser: ArgumentParser) -> Namespace:
+def check_config_keys(cfg: DictConfig) -> None:
     """
-    Retrieve and parse the args; some args might have been passed in a JSON
-    config file.
-
-    Returns:
-        Argparse options.
-    """
-    args = parser.parse_args()
-
-    if args.config is not None:
-        if os.path.exists(args.config):
-            assert args.config.endswith(".json"), (
-                f"Config file should be a JSON file, but is a '{args.config}' "
-                "file."
-            )
-            with open(args.config, "r") as f:
-                config_args = json.load(f)  # type: dict
-
-            # List all registered arguments
-            registered_args = {action.dest for action in parser._actions}
-
-            # Check if all config keys are known to the parser
-            unknown_args = set(config_args) - registered_args
-
-            # Check for unknown arguments
-            if unknown_args:
-                raise ValueError(
-                    f"Unknown argument(s) in JSON config: {unknown_args}"
-                )
-
-            parser.set_defaults(**config_args)
-            args = parser.parse_args()
-        else:
-            raise ValueError(f"Config file '{args.config}' not found.")
-
-    check_args(args)
-
-    return args
-
-
-def check_args(args: Namespace) -> None:
-    """
-    Check provided arguments and print them to CLI.
+    Check provided config flags.
 
     Args:
-        args: Arguments provided by the user.
+        cfg: Configuration dictionary from hydra containing keys and values.
     """
 
     # create saving dir if non-existent
-    os.makedirs(args.saving_path, exist_ok=True)
+    os.makedirs(cfg.training.saving_path, exist_ok=True)
 
-    if args.num_additional_cps > args.num_epochs:
-        args.num_additional_cps = args.num_epochs
+    if cfg.training.num_additional_cps > cfg.training.num_epochs:
+        cfg.training.num_additional_cps = cfg.training.num_epochs
 
-    assert args.compile_mode in [
+    assert cfg.training.compile_mode in [
         None,
         "default",
         "reduce-overhead",
         "max-autotune",
     ], (
-        f"``{args.compile_mode}`` is not a valid compile mode in "
+        f"``{cfg.training.compile_mode}`` is not a valid compile mode in "
         "``torch.compile()``."
     )
-    if args.pin_memory and not torch.cuda.is_available():
-        args.pin_memory = False  # pinned memory only available for GPUs
-    if args.pin_memory:
-        assert args.num_workers > 0, (
+    if cfg.dataloading.pin_memory and not torch.cuda.is_available():
+        # pinned memory only available for GPUs:
+        cfg.dataloading.pin_memory = False
+    if cfg.dataloading.pin_memory:
+        assert cfg.dataloading.num_workers > 0, (
             "With pinned memory, ``num_workers > 0`` should be chosen, cf. "
             "https://stackoverflow.com/questions/55563376/pytorch-how"
             "-does-pin-memory-work-in-dataloader"
         )
-    assert 0 <= args.dropout_rate < 1, (
+    assert 0 <= cfg.model.dropout < 1, (
         "``dropout_rate`` should be chosen between 0 (inclusive) and 1 "
-        f"(exclusive), but is {args.dropout_rate}."
+        f"(exclusive), but is {cfg.model.dropout}."
     )
-    assert 0 <= args.label_smoothing < 1, (
+    assert 0 <= cfg.training.label_smoothing < 1, (
         "``label_smoothing`` should be chosen between 0 (inclusive) and 1 "
-        f"(exclusive), but is {args.label_smoothing}."
+        f"(exclusive), but is {cfg.training.label_smoothing}."
     )
-    assert 0 < args.train_split < 1, (
+    assert 0 < cfg.dataset.train_split < 1, (
         "``train_split`` should be chosen between 0 and 1, "
-        f"but is {args.train_split}."
+        f"but is {cfg.dataset.train_split}."
     )
 
 
