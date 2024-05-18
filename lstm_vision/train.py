@@ -31,9 +31,9 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    timestamp: str,
+    timestamp: Optional[str] = None,
     num_additional_cps: int = 0,
-    saving_path: str = None,
+    saving_path: Optional[str] = None,
     label_smoothing: float = 0.0,
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
@@ -154,11 +154,16 @@ def train_and_validate(
                 "val_acc": val_accs[epoch],
                 "epoch": epoch,
             }
+            if timestamp is None:
+                saving_name = f"cp_epoch_{epoch}.pt"
+            else:
+                saving_name = f"cp_epoch_{epoch}_{timestamp}.pt"
+
             save_checkpoint(
                 state=checkpoint,
                 filename=os.path.join(
                     saving_path,
-                    f"cp_epoch_{epoch}_{timestamp}.pt",
+                    saving_name,
                 ),
             )
 

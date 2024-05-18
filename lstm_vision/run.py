@@ -193,7 +193,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_amp=cfg.training.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,
-        timestamp=timestamp,
+        timestamp=None if rank > 0 else timestamp,
         num_additional_cps=cfg.training.num_additional_cps,
         saving_path=cfg.training.saving_path,
         label_smoothing=cfg.training.label_smoothing,
