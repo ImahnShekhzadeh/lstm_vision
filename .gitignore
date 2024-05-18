@@ -17,6 +17,7 @@ test_sth.ipynb
 
 # outputs dir
 outputs
+multirun
 
 # wandb
 wandb
