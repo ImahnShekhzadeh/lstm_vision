@@ -27,29 +27,28 @@ from utils import (
 )
 
 
-@hydra.main(version_base=None, config_path="/app/configs", config_name="conf")
-def main(cfg: DictConfig) -> None:
-    """Main."""
+def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
+    """
+    Run LSTM on MNIST data.
 
-    # get rank
-    if torch.cuda.is_available():
-        rank = int(os.environ.get("RANK", 0))
-    else:
-        rank = torch.device("cpu")
+    Args:
+        rank: Rank of the current process. Can be `torch.device("cpu")` if no
+            GPU is available.
+        world_size: Number of processes participating in distributed training.
+            If `world_size` is 1, no distributed training is used.
+        cfg: Configuration dictionary from hydra containing keys and values.
+    """
 
     # set random seed, each process gets different seed
     if cfg.training.seed_number is not None:
         torch.manual_seed(cfg.training.seed_number + rank)
 
-    if cfg.training.use_ddp:
+    if cfg.training.use_ddp and world_size > 1:
         # When using a single GPU per process and per
         # DistributedDataParallel, we need to divide the batch size
         # ourselves based on the total number of GPUs of the current node.
         cfg.training.batch_size = int(cfg.training.batch_size / world_size)
 
-        world_size = int(
-            os.environ.get("WORLD_SIZE", torch.cuda.device_count())
-        )
         setup(
             rank=rank,
             world_size=world_size,
@@ -134,8 +133,7 @@ def main(cfg: DictConfig) -> None:
         # Log GPU devices
         if torch.cuda.is_available():
             list_gpus = [
-                torch.cuda.get_device_name(i)
-                for i in range(torch.cuda.device_count())
+                torch.cuda.get_device_name(i) for i in range(world_size)
             ]
             logging.info(f"\nGPU(s): {list_gpus}\n")
 
@@ -257,14 +255,31 @@ def main(cfg: DictConfig) -> None:
             wandb.finish()
 
 
-if __name__ == "__main__":
-    # define world size (number of GPUs)
-    world_size = torch.cuda.device_count()
+@hydra.main(version_base=None, config_path="/app/configs", config_name="conf")
+def main(cfg: DictConfig) -> None:
+    """
+    Main.
 
-    # if args.use_ddp and world_size > 1:
-    if world_size > 1:
-        os.environ["WORLD_SIZE"] = str(world_size)
-        mp.spawn(main, nprocs=world_size)
+    Args:
+        cfg: Configuration dictionary from hydra containing keys and values.
+    """
+
+    # get world size (number of GPUs)
+    world_size = int(os.getenv("WORLD_SIZE", 1))
+
+    if cfg.training.use_ddp and world_size > 1:
+        run(rank=int(os.getenv("RANK", 0)), world_size=world_size, cfg=cfg)
     else:
-        # use_ddp = False
-        main()
+        rank = 0 if torch.cuda.is_available() else torch.device("cpu")
+        if cfg.training.use_ddp:
+            logging.warning(
+                "Distributed Data Parallel can only be used if at least two "
+                "GPUs are available. Proceeding with training on "
+                f"{torch.device(rank)}."
+            )
+            cfg.training.use_ddp = False
+        run(rank=rank, world_size=world_size, cfg=cfg)
+
+
+if __name__ == "__main__":
+    main()
