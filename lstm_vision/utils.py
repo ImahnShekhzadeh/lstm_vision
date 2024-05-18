@@ -51,18 +51,26 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def setup(rank: int, world_size: int, backend: str = "nccl"):
+def setup(
+    rank: int,
+    world_size: int,
+    master_addr: str = "localhost",
+    master_port: str = "12355",
+    backend: str = "nccl",
+):
     """
     Initialize the distributed environment.
 
     Args:
         rank: Rank of the current process.
         world_size: Number of processes participating in the job.
+        master_addr: IP address of the master node.
+        master_port: Port number of the master node.
         backend: Backend to use.
     """
 
-    os.environ["MASTER_ADDR"] = "localhost"  # NOTE: might have to be adjusted
-    os.environ["MASTER_PORT"] = "12355"
+    os.environ["MASTER_ADDR"] = master_addr
+    os.environ["MASTER_PORT"] = master_port
 
     # initialize the process group
     dist.init_process_group(

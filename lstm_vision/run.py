@@ -52,6 +52,8 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         setup(
             rank=rank,
             world_size=world_size,
+            master_addr=cfg.training.master_addr,
+            master_port=cfg.training.master_port,
         )
 
     # get datasets
@@ -271,10 +273,14 @@ def main(cfg: DictConfig) -> None:
         run(rank=int(os.getenv("RANK", 0)), world_size=world_size, cfg=cfg)
     else:
         rank = 0 if torch.cuda.is_available() else torch.device("cpu")
-        if cfg.training.use_ddp:
+        if (
+            cfg.training.use_ddp
+            or cfg.training.master_addr is not None
+            or cfg.training.master_port is not None
+        ):
             logging.warning(
-                "Distributed Data Parallel can only be used if at least two "
-                "GPUs are available. Proceeding with training on "
+                "Distributed Data Parallel (DDP) can only be used if at least "
+                "two GPUs are available. Proceeding with training on "
                 f"{torch.device(rank)}."
             )
             cfg.training.use_ddp = False

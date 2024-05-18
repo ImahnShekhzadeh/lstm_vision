@@ -23,6 +23,8 @@ optim:
 training:
   seed_number: 0
   use_ddp: false
+  master_addr: null
+  master_port: null
   use_amp: true  # automatic mixed precision
   batch_size: 16384
   max_norm: null  # max norm for gradient clipping
