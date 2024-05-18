@@ -94,8 +94,46 @@ def main() -> None:
 
     # get git info, setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
-        get_git_info()
+        # Get timestamp
+        timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
+
+        # Setup Weights & Biases
         wandb_logging = args.wandb__api_key is not None
+        if wandb_logging:
+            wandb.login(key=args.wandb__api_key)
+            wandb.init(
+                project="lstm_vision",
+                name=timestamp,
+                config=args,
+            )
+
+        # Setup basic configuration for logging
+        log_level = logging.INFO
+        logging.basicConfig(
+            filename=os.path.join(args.saving_path, f"run_{timestamp}.log"),
+            level=log_level,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
+
+        # Create `StreamHandler` for stdout and add it to root logger
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(log_level)
+        logging.getLogger().addHandler(console_handler)
+
+        if args.config is not None and os.path.exists(args.config):
+            logging.info(f"Config file '{args.config}' found and loaded.")
+        logging.info(args)
+
+        # Log GPU devices
+        if torch.cuda.is_available():
+            list_gpus = [
+                torch.cuda.get_device_name(i)
+                for i in range(torch.cuda.device_count())
+            ]
+            logging.info(f"\nGPU(s): {list_gpus}\n")
+
+        # Log git commit and branch
+        get_git_info()
 
         logging.info(
             f"# Train:val:test samples: {len(train_loader.dataset)}"
@@ -146,7 +184,7 @@ def main() -> None:
         use_amp=args.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,
-        timestamp=args.timestamp,
+        timestamp=timestamp,
         num_additional_cps=args.num_additional_cps,
         saving_path=args.saving_path,
         label_smoothing=args.label_smoothing,
@@ -162,7 +200,7 @@ def main() -> None:
             state=checkpoint,
             filename=os.path.join(
                 args.saving_path,
-                f"lstm_cp_{args.timestamp}.pt",
+                f"lstm_cp_{timestamp}.pt",
             ),
         )
 
@@ -197,7 +235,7 @@ def main() -> None:
             use_amp=args.use_amp,
             saving_path=args.saving_path,
             device=rank,
-            timestamp=args.timestamp,
+            timestamp=timestamp,
         )
 
         if wandb_logging:
@@ -208,41 +246,8 @@ if __name__ == "__main__":
     parser = get_parser()
     args = retrieve_args(parser)
 
-    # Get timestamp
-    args.timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
-
-    # Setup Weights & Biases
-    if args.wandb__api_key is not None:
-        wandb.login(key=args.wandb__api_key)
-        wandb.init(
-            project="lstm_vision",
-            name=args.timestamp,
-            config=args,
-        )
-
-    # Setup basic configuration for logging
-    log_level = logging.INFO
-    logging.basicConfig(
-        filename=os.path.join(args.saving_path, f"run_{args.timestamp}.log"),
-        level=log_level,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-
-    # Create `StreamHandler` for stdout and add it to root logger
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(log_level)
-    logging.getLogger().addHandler(console_handler)
-
-    if args.config is not None and os.path.exists(args.config):
-        logging.info(f"Config file '{args.config}' found and loaded.")
-    logging.info(args)
-
     # define world size (number of GPUs)
     world_size = torch.cuda.device_count()
-
-    if torch.cuda.is_available():
-        list_gpus = [torch.cuda.get_device_name(i) for i in range(world_size)]
-        logging.info(f"\nGPU(s): {list_gpus}\n")
 
     if args.use_ddp and world_size > 1:
         # When using a single GPU per process and per
