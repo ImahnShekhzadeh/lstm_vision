@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-from argparse import Namespace
 from datetime import datetime as dt
 
 import torch
@@ -27,11 +26,7 @@ from utils import (
 )
 
 
-def main(
-    rank: int | torch.device,
-    world_size: int,
-    args: Namespace,
-) -> None:
+def main() -> None:
     """
     Main function.
 
@@ -41,11 +36,20 @@ def main(
         args: command line arguments
     """
 
+    # get rank
+    if torch.cuda.is_available():
+        rank = int(os.environ.get("RANK", 0))
+    else:
+        rank = torch.device("cpu")
+
     # set random seed, each process gets different seed
     if args.seed_number is not None:
         torch.manual_seed(args.seed_number + rank)
 
     if args.use_ddp:
+        world_size = int(
+            os.environ.get("WORLD_SIZE", torch.cuda.device_count())
+        )
         setup(
             rank=rank,
             world_size=world_size,
@@ -245,11 +249,8 @@ if __name__ == "__main__":
         # DistributedDataParallel, we need to divide the batch size
         # ourselves based on the total number of GPUs of the current node.
         args.batch_size = int(args.batch_size / world_size)
-        mp.spawn(main, args=(world_size, args), nprocs=world_size)
+        os.environ["WORLD_SIZE"] = str(world_size)
+        mp.spawn(main, nprocs=world_size)
     else:
         args.use_ddp = False
-        main(
-            rank=0 if world_size >= 1 else torch.device("cpu"),
-            world_size=1,
-            args=args,
-        )
+        main()
