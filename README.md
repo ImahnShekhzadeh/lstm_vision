@@ -10,15 +10,15 @@ Note that this repository is more for showing that LSTMs can also be used to do 
 ### Single-GPU
 On a single-GPU machine, I ran the script `run.py` as follows:
 ```
-docker build -f Dockerfile -t lstm-vision:1.2.0 .
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 python -B /app/lstm_vision/run.py training.saving_path=[...]
+docker build -f Dockerfile -t lstm-vision:1.4.0 .
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 python -B /app/lstm_vision/run.py training.saving_path=[...]
 ```
 To check all available config keys, check out the file `configs/conf.yaml`.
 
 ### Distributed Data Parallel (DDP)
 You can easily specify to use [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) during training, which uses several GPUs if available:
 ```
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
 - training.master_port='"<port>"' training.saving_path=[...]
 ```
 where the master address is the IP address that can be obtained via `hostname -I`.

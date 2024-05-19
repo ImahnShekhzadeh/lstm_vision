@@ -7,6 +7,7 @@ import hydra
 import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
+from torch import distributed as dist
 from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
@@ -22,7 +23,6 @@ from utils import (
     get_git_info,
     get_model,
     load_checkpoint,
-    save_checkpoint,
     setup,
 )
 
@@ -93,13 +93,14 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
+    # Get timestamp and configure saving name of best checkpoint
+    timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
+    saving_name_best_cp = f"lstm_best_cp_{timestamp}.pt"
+
     # get git info, setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
         # check config flags
         check_config_keys(cfg)
-
-        # Get timestamp
-        timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
 
         # Setup Weights & Biases
         wandb_logging = cfg.training.wandb__api_key is not None
@@ -128,6 +129,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n\n"
             f"{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
         )
+        count_parameters(model)  # TODO: rename, misleadig name
     else:
         wandb_logging = False
 
@@ -167,7 +169,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         )
 
     # Train the network:
-    checkpoint = train_and_validate(
+    train_and_validate(
         model=model,
         optimizer=optimizer,
         num_epochs=cfg.training.num_epochs,
@@ -180,6 +182,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         timestamp=None if rank > 0 else timestamp,
         num_additional_cps=cfg.training.num_additional_cps,
         saving_path=cfg.training.saving_path,
+        saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
         label_smoothing=cfg.training.label_smoothing,
         freq_output__train=cfg.training.freq_output__train,
         freq_output__val=cfg.training.freq_output__val,
@@ -187,23 +190,23 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         wandb_logging=wandb_logging,
     )
 
-    if rank in [0, torch.device("cpu")]:
-        # save model and optimizer state dicts
-        save_checkpoint(
-            state=checkpoint,
-            filename=os.path.join(
-                cfg.training.saving_path,
-                f"lstm_cp_{timestamp}.pt",
-            ),
-        )
-
-        count_parameters(model)  # TODO: rename, misleadig name
-
-        # load checkpoint with lowest validation loss for final evaluation;
-        # device does not need to be specified, since the checkpoint will be
-        # loaded on the CPU or GPU with ID 0 depending on where the checkpoint
-        # was saved
-        load_checkpoint(model=model, checkpoint=checkpoint)
+    # Load checkpoint with lowest validation loss for final evaluation.
+    # It is necessary that all processes load the same checkpoint.
+    # Use a `barrier()` to make sure that process 1 loads the model after
+    # process 0 saves it
+    if cfg.training.use_ddp and world_size > 1:
+        dist.barrier()
+    if rank == torch.device("cpu"):
+        map_location = {"cuda:0": "cpu"}
+    else:
+        map_location = {"cuda:0": f"cuda:{rank}"}
+    load_checkpoint(
+        model=model,
+        checkpoint=torch.load(
+            os.path.join(cfg.training.saving_path, saving_name_best_cp),
+            map_location=map_location,
+        ),
+    )
 
     # check accuracy on train set
     train__num_correct, train__num_samples = check_accuracy(

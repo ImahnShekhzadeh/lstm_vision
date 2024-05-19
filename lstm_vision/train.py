@@ -35,6 +35,7 @@ def train_and_validate(
     timestamp: Optional[str] = None,
     num_additional_cps: int = 0,
     saving_path: Optional[str] = None,
+    saving_name_best_cp: Optional[str] = None,
     label_smoothing: float = 0.0,
     freq_output__train: Optional[int] = 10,
     freq_output__val: Optional[int] = 10,
@@ -42,7 +43,8 @@ def train_and_validate(
     wandb_logging: bool = False,
 ) -> Dict:
     """
-    Train and validate the model.
+    Train and validate the model. The code will always save a checkpoint
+    corresponding to the model on rank 0 with lowest validation loss.
 
     Args:
         model: Model to train.
@@ -57,15 +59,13 @@ def train_and_validate(
         num_additional_cps: Number of checkpoints to save (one is always saved
             at the lowest validation loss)
         saving_path: Directory path to save the checkpoints.
+        saving_name_best_cp: Saving name of the best checkpoint.
         label_smoothing: Amount of smoothing to be applied when calculating
             loss.
         freq_output__train: Frequency at which to print the training info.
         freq_output__val: Frequency at which to print the validation info.
         max_norm: Maximum norm of the gradients.
         wandb_logging: API key for Weights & Biases.
-
-    Returns:
-        Checkpoint of the model corresponding to the lowest validation loss.
     """
 
     # check saving path
@@ -127,7 +127,12 @@ def train_and_validate(
         val_loss *= world_size / len(val_loader.dataset)
 
         # update checkpoint dict if val loss has decreased
-        if val_loss < min_val_loss:
+        if val_loss < min_val_loss and rank in [
+            0,
+            torch.device("cuda:0"),
+            torch.device("cuda"),
+            torch.device("cpu"),
+        ]:
             min_val_loss = val_loss
             checkpoint_best = {
                 "state_dict": deepcopy(model.state_dict()),
@@ -141,7 +146,13 @@ def train_and_validate(
         if (
             (num_additional_cps >= 1)
             and ((epoch + 1) % (num_epochs // num_additional_cps) == 0)
-            and rank in [0, torch.device("cpu")]
+            and rank
+            in [
+                0,
+                torch.device("cuda:0"),
+                torch.device("cuda"),
+                torch.device("cpu"),
+            ]
         ):
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
@@ -163,7 +174,12 @@ def train_and_validate(
                 ),
             )
 
-        if rank in [0, torch.device("cpu")]:
+        if rank in [
+            0,
+            torch.device("cuda:0"),
+            torch.device("cuda"),
+            torch.device("cpu"),
+        ]:
             # log to Weights & Biases
             if wandb_logging:
                 wandb.log(
@@ -200,7 +216,12 @@ def train_and_validate(
         * num_epochs
     )
 
-    if rank in [0, torch.device("cpu")]:
+    if rank in [
+        0,
+        torch.device("cuda:0"),
+        torch.device("cuda"),
+        torch.device("cpu"),
+    ]:
         log_training_stats(
             start_time=start_time,
             energy_consump=measurement.total_energy,
@@ -210,7 +231,14 @@ def train_and_validate(
             ),
         )
 
-    return checkpoint_best
+        # save model and optimizer state dicts
+        save_checkpoint(
+            state=checkpoint_best,
+            filename=os.path.join(
+                saving_path,
+                saving_name_best_cp,
+            ),
+        )
 
 
 def train_one_epoch(
@@ -283,7 +311,12 @@ def train_one_epoch(
             num_correct += (max_indices == labels).sum().cpu().item()
             num_samples += batch_size
 
-        if rank in [0, torch.device("cpu")]:
+        if rank in [
+            0,
+            torch.device("cuda:0"),
+            torch.device("cuda"),
+            torch.device("cpu"),
+        ]:
             print__batch_info(
                 batch_idx=batch_idx,
                 loader=train_loader,
@@ -344,7 +377,12 @@ def validate_one_epoch(
         batch_size = val_output.shape[0]
         val_num_samples += batch_size
 
-        if rank in [0, torch.device("cpu")]:
+        if rank in [
+            0,
+            torch.device("cuda:0"),
+            torch.device("cuda"),
+            torch.device("cpu"),
+        ]:
             print__batch_info(
                 batch_idx=val_batch_idx,
                 loader=val_loader,

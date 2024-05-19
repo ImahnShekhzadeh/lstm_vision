@@ -482,7 +482,16 @@ def load_checkpoint(
         checkpoint: Checkpoint dictionary.
         optimizer: Optimizer for which state dict is loaded.
     """
-    model.load_state_dict(state_dict=checkpoint["state_dict"])
+    try:
+        model.load_state_dict(state_dict=checkpoint["state_dict"])
+    except RuntimeError:
+        # assume that model was saved in DDP setup, but now it is attempted
+        # to load the model state dict onto a single GPU; fix by removing
+        # the ".module" prefix
+        new_state_dict = {}
+        for k, v in checkpoint["state_dict"].items():
+            new_state_dict[k.replace(".module", "")] = v
+
     loading_msg = "=> Checkpoint loaded."
 
     if optimizer is not None:
