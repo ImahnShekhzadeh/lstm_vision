@@ -197,11 +197,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             ),
         )
 
-    # destroy process group if DDP was used (for clean exit)
-    if cfg.training.use_ddp:
-        cleanup()
-
-    if rank in [0, torch.device("cpu")]:
         count_parameters(model)  # TODO: rename, misleadig name
 
         # load checkpoint with lowest validation loss for final evaluation;
@@ -210,21 +205,38 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         # was saved
         load_checkpoint(model=model, checkpoint=checkpoint)
 
-        # check accuracy on train and test set and produce confusion matrix
-        check_accuracy(
-            train_loader,
-            model,
-            use_amp=cfg.training.use_amp,
-            mode="train",
-            device=rank,
-        )
-        check_accuracy(
+    # check accuracy on train set
+    train__num_correct, train__num_samples = check_accuracy(
+        train_loader,
+        model,
+        use_amp=cfg.training.use_amp,
+        mode="train",
+        device=rank,
+        use_ddp=cfg.training.use_ddp,
+    )
+
+    # destroy process group if DDP was used (for clean exit)
+    if cfg.training.use_ddp:
+        cleanup()
+
+    if rank in [0, torch.device("cpu")]:
+        # check accuracy on test set
+        test__num_correct, test__num_samples = check_accuracy(
             test_loader,
             model,
             use_amp=cfg.training.use_amp,
             mode="test",
             device=rank,
+            use_ddp=False,
         )
+        logging.info(
+            f"\nTrain data: Got {train__num_correct}/{train__num_samples} with"
+            f" accuracy {(100 * train__num_correct / train__num_samples):.2f} "
+            f"%\nTest data: Got {test__num_correct}/{test__num_samples} with "
+            f"accuracy {(100 * test__num_correct / test__num_samples):.2f} %"
+        )
+
+        # produce confusion matrix
         get_confusion_matrix(
             num_classes,
             test_loader,

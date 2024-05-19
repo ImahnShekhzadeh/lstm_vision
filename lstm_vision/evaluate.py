@@ -1,10 +1,11 @@
 import logging
 import os
+from typing import Tuple
 
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-from torch import autocast, nn
+from torch import autocast, distributed, nn
 from torch.utils.data import DataLoader
 
 
@@ -15,7 +16,8 @@ def check_accuracy(
     use_amp: bool,
     mode: str,
     device: int | torch.device,
-) -> None:
+    use_ddp: bool = False,
+) -> Tuple[int, int]:
     """
     Check the accuracy of a given model on a given dataset.
 
@@ -25,6 +27,10 @@ def check_accuracy(
         use_amp: Whether to use automatic mixed precision.
         mode: Mode in which the model is in. Either "train" or "test".
         device: Device on which the code is executed.
+        use_ddp: Whether distributed data parallel (DDP) is used.
+
+    Returns:
+        Number of correct and total predictions.
     """
     assert mode in ["train", "test"]
 
@@ -41,13 +47,31 @@ def check_accuracy(
             forward_pass = model(images.squeeze(dim=1).to(device))  # `(N, 10)`
 
         predictions = forward_pass.argmax(dim=1)
-        num_correct += (predictions == labels).sum().cpu().item()
+        num_correct += (predictions == labels).sum().item()
         num_samples += predictions.shape[0]
 
-    logging.info(
-        f"{mode.capitalize()} data: Got {num_correct}/{num_samples} with "
-        f"accuracy {(100 * num_correct / num_samples):.2f} %"
-    )
+    # If distributed data parallel (DDP) is used, we need to sum up the
+    # number of correct predictions and the number of samples across all
+    # GPUs:
+    if use_ddp:
+        num_correct = torch.tensor(
+            num_correct, dtype=torch.float32, device=device
+        )
+        num_samples = torch.tensor(
+            num_samples, dtype=torch.float32, device=device
+        )
+        distributed.all_reduce(
+            num_correct,
+            op=distributed.ReduceOp.SUM,
+        )
+        distributed.all_reduce(
+            num_samples,
+            op=distributed.ReduceOp.SUM,
+        )
+        num_correct = int(num_correct.item())
+        num_samples = int(num_samples.item())
+
+    return num_correct, num_samples
 
 
 @torch.no_grad()
