@@ -309,6 +309,7 @@ def train_one_epoch(
     return trainingLoss_perEpoch, num_correct, num_samples
 
 
+@torch.no_grad()
 def validate_one_epoch(
     model: nn.Module,
     val_loader: DataLoader,
@@ -334,42 +335,37 @@ def validate_one_epoch(
         Validation loss for all batches for the single epoch, number of correct
         predictions, and number of samples.
     """
-    with torch.no_grad():
-        valLoss_perEpoch = []
-        val_num_correct, val_num_samples = 0, 0
-        model.eval()
+    valLoss_perEpoch = []
+    val_num_correct, val_num_samples = 0, 0
+    model.eval()
 
-        for val_batch_idx, (val_images, val_labels) in enumerate(val_loader):
-            val_labels = val_labels.to(rank)
+    for val_batch_idx, (val_images, val_labels) in enumerate(val_loader):
+        val_labels = val_labels.to(rank)
 
-            with autocast(
-                device_type=val_labels.device.type,
-                dtype=torch.float16,
-                enabled=use_amp,
-            ):
-                val_output = model(
-                    val_images.squeeze_(dim=1).to(rank)
-                )  # `[N, C]`
-                val_loss = loss_fn(val_output, val_labels)
+        with autocast(
+            device_type=val_labels.device.type,
+            dtype=torch.float16,
+            enabled=use_amp,
+        ):
+            val_output = model(val_images.squeeze_(dim=1).to(rank))  # `[N, C]`
+            val_loss = loss_fn(val_output, val_labels)
 
-            valLoss_perEpoch.append(val_loss.item())
+        valLoss_perEpoch.append(val_loss.item())
 
-            # calculate accuracy
-            val_max_indices = val_output.argmax(dim=1, keepdim=False)
-            val_num_correct += (
-                (val_max_indices == val_labels).cpu().sum().item()
+        # calculate accuracy
+        val_max_indices = val_output.argmax(dim=1, keepdim=False)
+        val_num_correct += (val_max_indices == val_labels).sum().item()
+        batch_size = val_output.shape[0]
+        val_num_samples += batch_size
+
+        if rank in [0, torch.device("cpu")]:
+            print__batch_info(
+                batch_idx=val_batch_idx,
+                loader=val_loader,
+                epoch=epoch,
+                loss=val_loss / batch_size,
+                mode="val",
+                frequency=freq_output__val,
             )
-            batch_size = val_output.shape[0]
-            val_num_samples += batch_size
-
-            if rank in [0, torch.device("cpu")]:
-                print__batch_info(
-                    batch_idx=val_batch_idx,
-                    loader=val_loader,
-                    epoch=epoch,
-                    loss=val_loss / batch_size,
-                    mode="val",
-                    frequency=freq_output__val,
-                )
 
     return valLoss_perEpoch, val_num_correct, val_num_samples
