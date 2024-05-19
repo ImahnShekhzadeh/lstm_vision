@@ -386,7 +386,7 @@ def log_training_stats(
         msg += (
             f"\n\tEnergy consumption of entire training = "
             f"{energy_consump / 1e3:.3f} [kJ]"
-            f"\n\tMax memory used by tensors = "
+            f"\n\tMax memory used by tensors on device {device} = "
             f"{torch.cuda.max_memory_allocated(device=device) / 1024**2:.3f} "
             "[MB]"
         )
