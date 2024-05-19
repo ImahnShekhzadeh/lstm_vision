@@ -82,7 +82,6 @@ def train_and_validate(
 
     # auxiliary variables
     start_time = start_timer(device=rank)
-    train_losses, val_losses, train_accs, val_accs = [], [], [], []
     min_val_loss = float("inf")
 
     # AMP
@@ -99,7 +98,7 @@ def train_and_validate(
     for epoch in range(num_epochs):
         t0 = start_timer(device=rank)
 
-        trainingLoss_perEpoch, num_correct, num_samples = train_one_epoch(
+        train_loss, num_correct, num_samples = train_one_epoch(
             train_loader=train_loader,
             model=model,
             optimizer=optimizer,
@@ -114,14 +113,10 @@ def train_and_validate(
         )
         # mean loss per sample over all GPUs; we could alternatively use
         # `torch.distributed.reduce()` to sum the losses over all GPUs
-        train_losses.append(
-            world_size
-            * np.sum(trainingLoss_perEpoch, axis=0)
-            / len(train_loader.dataset)
-        )
-        train_accs.append(num_correct / num_samples)
+        train_loss *= world_size / len(train_loader.dataset)
+        train_acc = num_correct / num_samples
 
-        valLoss_perEpoch, num_correct, num_samples = validate_one_epoch(
+        val_loss, num_correct, num_samples = validate_one_epoch(
             model=model,
             val_loader=val_loader,
             loss_fn=loss_fn,
@@ -130,21 +125,17 @@ def train_and_validate(
             epoch=epoch,
             freq_output__val=freq_output__val,
         )
-        val_losses.append(
-            world_size
-            * np.sum(valLoss_perEpoch, axis=0)
-            / len(val_loader.dataset)
-        )
-        val_accs.append(num_correct / num_samples)
+        val_loss *= world_size / len(val_loader.dataset)
+        val_acc = num_correct / num_samples
 
         # update checkpoint dict if val loss has decreased
-        if val_losses[epoch] < min_val_loss:
-            min_val_loss = val_losses[epoch]
+        if val_loss < min_val_loss:
+            min_val_loss = val_loss
             checkpoint_best = {
                 "state_dict": deepcopy(model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
-                "val_loss": val_losses[epoch],
-                "val_acc": val_accs[epoch],
+                "val_loss": val_loss,
+                "val_acc": val_acc,
                 "epoch": epoch,
             }
 
@@ -157,8 +148,8 @@ def train_and_validate(
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
-                "val_loss": val_losses[epoch],
-                "val_acc": val_accs[epoch],
+                "val_loss": val_loss,
+                "val_acc": val_acc,
                 "epoch": epoch,
             }
             if timestamp is None:
@@ -179,10 +170,10 @@ def train_and_validate(
             if wandb_logging:
                 wandb.log(
                     {
-                        "train_loss": train_losses[epoch],
-                        "val_loss": val_losses[epoch],
-                        "train_acc": train_accs[epoch],
-                        "val_acc": val_accs[epoch],
+                        "train_loss": train_loss,
+                        "val_loss": val_loss,
+                        "train_acc": train_acc,
+                        "val_acc": val_acc,
                         "epoch": epoch,
                     },
                     step=epoch,
@@ -190,10 +181,9 @@ def train_and_validate(
 
             logging.info(
                 f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
-                f"Mean train/val loss: {train_losses[epoch]:.4f}/"
-                f"{val_losses[epoch]:.4f}\tTrain/val acc: "
-                f"{1e2 * train_accs[epoch]:.2f} %/{1e2 * val_accs[epoch]:.2f} "
-                "%\n"
+                f"Mean train/val loss: {train_loss:.4f}/{val_loss:.4f}\t"
+                f"Train/val acc: "
+                f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
             )
 
     # stop energy consumption measurement
@@ -259,8 +249,7 @@ def train_one_epoch(
         predictions, and number of samples.
     """
 
-    trainingLoss_perEpoch = []
-    num_correct, num_samples = 0, 0  # for calculating accuracy
+    epoch_loss, num_correct, num_samples = 0, 0, 0  # auxiliary variables
     model.train()
 
     for batch_idx, (images, labels) in enumerate(train_loader):
@@ -288,7 +277,7 @@ def train_one_epoch(
             scaler.update()
             optimizer.zero_grad()
 
-        trainingLoss_perEpoch.append(loss.item() * num_grad_accum_steps)
+        epoch_loss += loss.item() * num_grad_accum_steps
 
         # calculate accuracy
         with torch.no_grad():
@@ -306,7 +295,7 @@ def train_one_epoch(
                 frequency=freq_output__train,
             )
 
-    return trainingLoss_perEpoch, num_correct, num_samples
+    return epoch_loss, num_correct, num_samples
 
 
 @torch.no_grad()
@@ -335,8 +324,7 @@ def validate_one_epoch(
         Validation loss for all batches for the single epoch, number of correct
         predictions, and number of samples.
     """
-    valLoss_perEpoch = []
-    val_num_correct, val_num_samples = 0, 0
+    epoch_loss, val_num_correct, val_num_samples = 0, 0, 0
     model.eval()
 
     for val_batch_idx, (val_images, val_labels) in enumerate(val_loader):
@@ -350,7 +338,7 @@ def validate_one_epoch(
             val_output = model(val_images.squeeze_(dim=1).to(rank))  # `[N, C]`
             val_loss = loss_fn(val_output, val_labels)
 
-        valLoss_perEpoch.append(val_loss.item())
+        epoch_loss += val_loss.item()
 
         # calculate accuracy
         val_max_indices = val_output.argmax(dim=1, keepdim=False)
@@ -368,4 +356,4 @@ def validate_one_epoch(
                 frequency=freq_output__val,
             )
 
-    return valLoss_perEpoch, val_num_correct, val_num_samples
+    return epoch_loss, val_num_correct, val_num_samples
