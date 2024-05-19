@@ -76,8 +76,8 @@ def train_and_validate(
         os.makedirs(saving_path, exist_ok=True)
 
     # define loss function
-    cce_mean = nn.CrossEntropyLoss(
-        reduction="mean", label_smoothing=label_smoothing
+    loss_fn = nn.CrossEntropyLoss(
+        reduction="sum", label_smoothing=label_smoothing
     )
 
     # auxiliary variables
@@ -103,7 +103,7 @@ def train_and_validate(
             train_loader=train_loader,
             model=model,
             optimizer=optimizer,
-            loss_fn=cce_mean,
+            loss_fn=loss_fn,
             num_grad_accum_steps=num_grad_accum_steps,
             scaler=scaler,
             rank=rank,
@@ -124,7 +124,7 @@ def train_and_validate(
         valLoss_perEpoch, num_correct, num_samples = validate_one_epoch(
             model=model,
             val_loader=val_loader,
-            loss_fn=cce_mean,
+            loss_fn=loss_fn,
             rank=rank,
             use_amp=use_amp,
             epoch=epoch,
@@ -274,7 +274,8 @@ def train_one_epoch(
             output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
             loss = loss_fn(output, labels) / num_grad_accum_steps
 
-        scaler.scale(loss).backward()
+        batch_size = output.shape[0]
+        scaler.scale(loss / batch_size).backward()
         if ((batch_idx + 1) % num_grad_accum_steps == 0) or (
             batch_idx + 1 == len(train_loader)
         ):
@@ -287,13 +288,10 @@ def train_one_epoch(
             scaler.update()
             optimizer.zero_grad()
 
-        trainingLoss_perEpoch.append(
-            loss.cpu().item() * num_grad_accum_steps * output.shape[0]
-        )
+        trainingLoss_perEpoch.append(loss.item() * num_grad_accum_steps)
 
         # calculate accuracy
         with torch.no_grad():
-            batch_size = output.shape[0]
             max_indices = output.argmax(dim=1, keepdim=False)
             num_correct += (max_indices == labels).sum().cpu().item()
             num_samples += batch_size
@@ -303,7 +301,7 @@ def train_one_epoch(
                 batch_idx=batch_idx,
                 loader=train_loader,
                 epoch=epoch,
-                loss=loss * num_grad_accum_steps,
+                loss=loss * num_grad_accum_steps / batch_size,
                 mode="train",
                 frequency=freq_output__train,
             )
@@ -354,7 +352,7 @@ def validate_one_epoch(
                 )  # `[N, C]`
                 val_loss = loss_fn(val_output, val_labels)
 
-            valLoss_perEpoch.append(val_loss.item() * val_output.shape[0])
+            valLoss_perEpoch.append(val_loss.item())
 
             # calculate accuracy
             val_max_indices = val_output.argmax(dim=1, keepdim=False)
@@ -369,7 +367,7 @@ def validate_one_epoch(
                     batch_idx=val_batch_idx,
                     loader=val_loader,
                     epoch=epoch,
-                    loss=val_loss,
+                    loss=val_loss / batch_size,
                     mode="val",
                     frequency=freq_output__val,
                 )
