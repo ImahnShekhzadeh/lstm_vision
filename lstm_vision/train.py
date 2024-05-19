@@ -28,6 +28,7 @@ def train_and_validate(
     num_epochs: int,
     num_grad_accum_steps: int,
     rank: int | torch.device,
+    world_size: int,
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
@@ -111,8 +112,12 @@ def train_and_validate(
             max_norm=max_norm,
             freq_output__train=freq_output__train,
         )
+        # mean loss per sample over all GPUs; we could alternatively use
+        # `torch.distributed.reduce()` to sum the losses over all GPUs
         train_losses.append(
-            np.sum(trainingLoss_perEpoch, axis=0) / len(train_loader.dataset)
+            world_size
+            * np.sum(trainingLoss_perEpoch, axis=0)
+            / len(train_loader.dataset)
         )
         train_accs.append(num_correct / num_samples)
 
@@ -126,7 +131,9 @@ def train_and_validate(
             freq_output__val=freq_output__val,
         )
         val_losses.append(
-            np.sum(valLoss_perEpoch, axis=0) / len(val_loader.dataset)
+            world_size
+            * np.sum(valLoss_perEpoch, axis=0)
+            / len(val_loader.dataset)
         )
         val_accs.append(num_correct / num_samples)
 

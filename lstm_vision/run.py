@@ -192,6 +192,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         num_epochs=cfg.training.num_epochs,
         num_grad_accum_steps=cfg.training.num_grad_accum_steps,
         rank=rank,
+        world_size=world_size,
         use_amp=cfg.training.use_amp,
         train_loader=train_loader,
         val_loader=val_loader,

@@ -23,16 +23,12 @@ training.wandb__api_key=<your_key>
 ```
 
 ### Distributed Data Parallel (DDP)
-You can also easily specify a [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) setup by passing the flag `--use_ddp` in the `configs/conf.json` file (for this, ensure you have more than one NVIDIA GPU). Note that if running this on the [runpod.io](https://www.runpod.io/), you need to change the line
-```python
-os.environ["MASTER_ADDR"] = "localhost"
+You can easily specify to use [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) during training, which uses several GPUs if available:
 ```
-in the `setup()` function `functions.py` to
-```python
-os.environ["MASTER_ADDR"] = "<ip_address>"
-# os.environ["MASTER_ADDR"] = "192.xxx.xx.x"
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
+- training.master_port='"<port>"' training.saving_path=[...]
 ```
-where `ip_address` can be obtained via `hostname -I`.
+where the master address is the IP address that can be obtained via `hostname -I`.
 
 ## Results
 
