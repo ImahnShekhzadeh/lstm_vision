@@ -57,7 +57,7 @@ def setup(
     master_addr: str = "localhost",
     master_port: str = "12355",
     backend: str = "nccl",
-):
+) -> None:
     """
     Initialize the distributed environment.
 
