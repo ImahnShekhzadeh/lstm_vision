@@ -490,7 +490,8 @@ def load_checkpoint(
         # the ".module" prefix
         new_state_dict = {}
         for k, v in checkpoint["state_dict"].items():
-            new_state_dict[k.replace(".module", "")] = v
+            new_state_dict[k.replace("module.", "")] = v
+        model.load_state_dict(state_dict=new_state_dict)
 
     loading_msg = "=> Checkpoint loaded."
 
