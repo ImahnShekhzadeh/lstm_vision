@@ -90,9 +90,7 @@ def train_and_validate(
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
     if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
-        monitor = ZeusMonitor(
-            gpu_indices=[i for i in range(torch.cuda.device_count())]
-        )
+        monitor = ZeusMonitor(gpu_indices=[i for i in range(world_size)])
         monitor.begin_window("training")
 
     for epoch in range(num_epochs):
@@ -200,28 +198,25 @@ def train_and_validate(
                 f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
             )
 
-    # stop energy consumption measurement
-    if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
-        measurement = monitor.end_window("training")
-
-    # total number of training iterations
-    if torch.cuda.is_available():
-        num_devices = torch.cuda.device_count()
-    else:
-        num_devices = 1
-    num_iters = (
-        math.ceil(
-            len(train_loader.dataset) / (train_loader.batch_size * num_devices)
-        )
-        * num_epochs
-    )
-
     if rank in [
         0,
         torch.device("cuda:0"),
         torch.device("cuda"),
         torch.device("cpu"),
     ]:
+        # stop energy consumption measurement
+        if rank != torch.device("cpu"):
+            measurement = monitor.end_window("training")
+
+        # total number of training iterations
+        num_iters = (
+            math.ceil(
+                len(train_loader.dataset)
+                / (train_loader.batch_size * world_size)
+            )
+            * num_epochs
+        )
+
         log_training_stats(
             start_time=start_time,
             energy_consump=measurement.total_energy,
