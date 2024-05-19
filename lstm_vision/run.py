@@ -113,25 +113,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
                 ),
             )
 
-        """
-        # Setup basic configuration for logging
-        log_level = logging.INFO
-        logging.basicConfig(
-            filename=os.path.join(args.saving_path, f"run_{timestamp}.log"),
-            level=log_level,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
-
-        # Create `StreamHandler` for stdout and add it to root logger
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(log_level)
-        logging.getLogger().addHandler(console_handler)
-
-        if args.config is not None and os.path.exists(args.config):
-            logging.info(f"Config file '{args.config}' found and loaded.")
-        logging.info(args)
-        """
-
         # Log GPU devices
         if torch.cuda.is_available():
             list_gpus = [
