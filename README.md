@@ -7,20 +7,13 @@ Note that this repository is more for showing that LSTMs can also be used to do 
 
 ## Run
 
-### Basics
-I ran the script `run.py` as follows:
+### Single-GPU
+On a single-GPU machine, I ran the script `run.py` as follows:
 ```
 docker build -f Dockerfile -t lstm-vision:1.2.0 .
 docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 python -B /app/lstm_vision/run.py training.saving_path=[...]
 ```
 To check all available config keys, check out the file `configs/conf.yaml`.
-
-### W&B
-If you want to log some metrics to [Weights & Biases](https://wandb.ai/), append the following to the `docker run` command:
-```
-training.wandb__api_key=<your_key>
-# training.wandb__api_key=2fru...
-```
 
 ### Distributed Data Parallel (DDP)
 You can easily specify to use [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) during training, which uses several GPUs if available:
@@ -29,6 +22,13 @@ docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.2.0 
 - training.master_port='"<port>"' training.saving_path=[...]
 ```
 where the master address is the IP address that can be obtained via `hostname -I`.
+
+### W&B
+If you want to log some metrics to [Weights & Biases](https://wandb.ai/), append the following to the `docker run` command:
+```
+training.wandb__api_key=<your_key>
+# training.wandb__api_key=2fru...
+```
 
 ## Results
 
