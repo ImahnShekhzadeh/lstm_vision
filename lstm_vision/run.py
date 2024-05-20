@@ -168,45 +168,46 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             ),
         )
 
-    # Train the network:
-    train_and_validate(
-        model=model,
-        optimizer=optimizer,
-        num_epochs=cfg.training.num_epochs,
-        num_grad_accum_steps=cfg.training.num_grad_accum_steps,
-        rank=rank,
-        world_size=world_size,
-        use_amp=cfg.training.use_amp,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        timestamp=None if rank > 0 else timestamp,
-        num_additional_cps=cfg.training.num_additional_cps,
-        saving_path=cfg.training.saving_path,
-        saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
-        label_smoothing=cfg.training.label_smoothing,
-        freq_output__train=cfg.training.freq_output__train,
-        freq_output__val=cfg.training.freq_output__val,
-        max_norm=cfg.training.max_norm,
-        wandb_logging=wandb_logging,
-    )
+    if cfg.training.num_epochs > 0:
+        # Train the network:
+        train_and_validate(
+            model=model,
+            optimizer=optimizer,
+            num_epochs=cfg.training.num_epochs,
+            num_grad_accum_steps=cfg.training.num_grad_accum_steps,
+            rank=rank,
+            world_size=world_size,
+            use_amp=cfg.training.use_amp,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            timestamp=None if rank > 0 else timestamp,
+            num_additional_cps=cfg.training.num_additional_cps,
+            saving_path=cfg.training.saving_path,
+            saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
+            label_smoothing=cfg.training.label_smoothing,
+            freq_output__train=cfg.training.freq_output__train,
+            freq_output__val=cfg.training.freq_output__val,
+            max_norm=cfg.training.max_norm,
+            wandb_logging=wandb_logging,
+        )
 
-    # Load checkpoint with lowest validation loss for final evaluation.
-    # It is necessary that all processes load the same checkpoint.
-    # Use a `barrier()` to make sure that process 1 loads the model after
-    # process 0 saves it
-    if cfg.training.use_ddp and world_size > 1:
-        dist.barrier()
-    if rank == torch.device("cpu"):
-        map_location = {"cuda:0": "cpu"}
-    else:
-        map_location = {"cuda:0": f"cuda:{rank}"}
-    load_checkpoint(
-        model=model,
-        checkpoint=torch.load(
-            os.path.join(cfg.training.saving_path, saving_name_best_cp),
-            map_location=map_location,
-        ),
-    )
+        # Load checkpoint with lowest validation loss for final evaluation.
+        # It is necessary that all processes load the same checkpoint.
+        # Use a `barrier()` to make sure that process 1 loads the model after
+        # process 0 saves it
+        if cfg.training.use_ddp and world_size > 1:
+            dist.barrier()
+        if rank == torch.device("cpu"):
+            map_location = {"cuda:0": "cpu"}
+        else:
+            map_location = {"cuda:0": f"cuda:{rank}"}
+        load_checkpoint(
+            model=model,
+            checkpoint=torch.load(
+                os.path.join(cfg.training.saving_path, saving_name_best_cp),
+                map_location=map_location,
+            ),
+        )
 
     # check accuracy on train set
     train__num_correct, train__num_samples = check_accuracy(

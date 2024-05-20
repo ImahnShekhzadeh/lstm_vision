@@ -143,6 +143,16 @@ def check_config_keys(cfg: DictConfig) -> None:
     if cfg.training.num_additional_cps > cfg.training.num_epochs:
         cfg.training.num_additional_cps = cfg.training.num_epochs
 
+    if cfg.training.num_epochs == 0:
+        assert os.path.exists(cfg.model.loading_path), (
+            "Valid loading path for model needs to be provided when "
+            "`num_epochs=0` is set."
+        )
+        logging.info(
+            f"Loading model from '{cfg.model.loading_path}' for evaluation "
+            f"only, no training will be performed."
+        )
+
     assert cfg.training.compile_mode in [
         None,
         "default",
