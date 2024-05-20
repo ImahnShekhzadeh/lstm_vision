@@ -90,6 +90,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         bidirectional=cfg.model.bidirectional,
         dropout_rate=cfg.model.dropout,
         device=rank,
+        compile_mode=cfg.training.compile_mode,
         use_ddp=cfg.training.use_ddp,
     )
 
@@ -132,15 +133,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         count_parameters(model)  # TODO: rename, misleadig name
     else:
         wandb_logging = False
-
-    # compile model if specified
-    if cfg.training.compile_mode is not None:
-        logging.info(
-            f"\nCompiling model in ``{cfg.training.compile_mode}`` mode...\n"
-        )
-        model = torch.compile(
-            model, mode=cfg.training.compile_mode, fullgraph=False
-        )
 
     # Optimizer:
     optimizer = optim.AdamW(

@@ -89,6 +89,7 @@ def get_model(
     bidirectional: bool,
     dropout_rate: float,
     device: torch.device | int,
+    compile_mode: Optional[str] = None,
     use_ddp: bool = False,
 ) -> nn.Module:
     """
@@ -105,6 +106,9 @@ def get_model(
         dropout_rate: dropout rate for the dropout layer
         device: Device on which the code is executed. Can also be an int
             representing the GPU ID.
+        compile_mode: Compilation mode for the model. Should be one of
+            `None`, `"default"`, `"reduce-overhead"`, `"max-autotune"` or
+            `"max-autotune-no-cudagraphs"`.
         use_ddp: Whether to use DDP.
 
     Returns:
@@ -122,6 +126,11 @@ def get_model(
         dropout_rate=dropout_rate,
     )
     model.to(device)
+
+    # compile model if specified
+    if compile_mode is not None:
+        logging.info(f"\nCompiling model in ``{compile_mode}`` mode...\n")
+        model = torch.compile(model, mode=compile_mode, fullgraph=False)
 
     if use_ddp:
         model = DDP(model, device_ids=[device])
