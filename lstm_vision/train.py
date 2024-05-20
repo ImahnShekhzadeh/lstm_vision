@@ -87,9 +87,17 @@ def train_and_validate(
     # AMP
     scaler = GradScaler(enabled=use_amp)
 
+    # save or log if device is `cuda:0` or CPU
+    save_or_log = rank in [
+        0,
+        torch.device("cuda:0"),
+        torch.device("cuda"),
+        torch.device("cpu"),
+    ]
+
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
-    if rank in [0, torch.device("cuda:0"), torch.device("cuda")]:
+    if save_or_log and rank != torch.device("cpu"):
         monitor = ZeusMonitor(gpu_indices=[i for i in range(world_size)])
         monitor.begin_window("training")
 
@@ -125,12 +133,7 @@ def train_and_validate(
         val_loss *= world_size / len(val_loader.dataset)
 
         # update checkpoint dict if val loss has decreased
-        if val_loss < min_val_loss and rank in [
-            0,
-            torch.device("cuda:0"),
-            torch.device("cuda"),
-            torch.device("cpu"),
-        ]:
+        if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
             checkpoint_best = {
                 "state_dict": deepcopy(model.state_dict()),
@@ -144,13 +147,7 @@ def train_and_validate(
         if (
             (num_additional_cps >= 1)
             and ((epoch + 1) % (num_epochs // num_additional_cps) == 0)
-            and rank
-            in [
-                0,
-                torch.device("cuda:0"),
-                torch.device("cuda"),
-                torch.device("cpu"),
-            ]
+            and save_or_log
         ):
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
@@ -172,12 +169,7 @@ def train_and_validate(
                 ),
             )
 
-        if rank in [
-            0,
-            torch.device("cuda:0"),
-            torch.device("cuda"),
-            torch.device("cpu"),
-        ]:
+        if save_or_log:
             # log to Weights & Biases
             if wandb_logging:
                 wandb.log(
@@ -198,12 +190,7 @@ def train_and_validate(
                 f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
             )
 
-    if rank in [
-        0,
-        torch.device("cuda:0"),
-        torch.device("cuda"),
-        torch.device("cpu"),
-    ]:
+    if save_or_log:
         # stop energy consumption measurement
         if rank != torch.device("cpu"):
             measurement = monitor.end_window("training")
