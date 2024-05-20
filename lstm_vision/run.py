@@ -43,7 +43,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     if cfg.training.seed_number is not None:
         torch.manual_seed(cfg.training.seed_number + rank)
 
-    if cfg.training.use_ddp and world_size > 1:
+    if cfg.training.use_ddp:
         # When using a single GPU per process and per
         # DistributedDataParallel, we need to divide the batch size
         # ourselves based on the total number of GPUs of the current node.
@@ -195,7 +195,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         # It is necessary that all processes load the same checkpoint.
         # Use a `barrier()` to make sure that process 1 loads the model after
         # process 0 saves it
-        if cfg.training.use_ddp and world_size > 1:
+        if cfg.training.use_ddp:
             dist.barrier()
         if rank == torch.device("cpu"):
             map_location = {"cuda:0": "cpu"}
@@ -266,6 +266,13 @@ def main(cfg: DictConfig) -> None:
 
     # get world size (number of GPUs)
     world_size = int(os.getenv("WORLD_SIZE", 1))
+
+    if cfg.training.use_ddp and world_size == 1:
+        logging.warning(
+            "Distributed Data Parallel (DDP) is enabled but only one GPU is "
+            "available. Proceeding with training on a single GPU."
+        )
+        cfg.training.use_ddp = False
 
     if cfg.training.use_ddp and world_size > 1:
         run(rank=int(os.getenv("RANK", 0)), world_size=world_size, cfg=cfg)
