@@ -15,13 +15,21 @@ docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 
 ```
 To check all available config keys, check out the file `configs/conf.yaml`.
 
-### Distributed Data Parallel (DDP)
+If you only want to evaluate the model from a pre-existing checkpoint, add
+```
+model.loading_path=[...] training.num_epochs=0
+```
+
+### Multiple GPUs
 You can easily specify to use [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) during training, which uses several GPUs if available:
 ```
 docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
 - training.master_port='"<port>"' training.saving_path=[...]
 ```
-where the master address is the IP address that can be obtained via `hostname -I`.
+where the master address is the IP address that can be obtained via `hostname -I`. If you only want to evaluate the model from a pre-existing checkpoint, add
+```
+model.loading_path=[...] training.num_epochs=0
+```
 
 ### W&B
 If you want to log some metrics to [Weights & Biases](https://wandb.ai/), append the following to the `docker run` command:
