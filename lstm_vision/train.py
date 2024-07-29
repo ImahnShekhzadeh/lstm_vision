@@ -12,6 +12,7 @@ from torch import autocast, nn
 from torch.cuda.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import Sampler
 from zeus.monitor import ZeusMonitor
 
 from utils import (
@@ -32,6 +33,7 @@ def train_and_validate(
     use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    train_sampler: Optional[Sampler] = None,
     timestamp: Optional[str] = None,
     num_additional_cps: int = 0,
     saving_path: Optional[str] = None,
@@ -55,6 +57,7 @@ def train_and_validate(
         use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
+        train_sampler: Sampler for the training set.
         timestamp: Timestamp of the current run.
         num_additional_cps: Number of checkpoints to save (one is always saved
             at the lowest validation loss)
@@ -103,6 +106,11 @@ def train_and_validate(
 
     for epoch in range(num_epochs):
         t0 = start_timer(device=rank)
+
+        if train_sampler is not None:
+            # necessary to ensure shuffling of the data
+            # https://pytorch.org/docs/stable/data.html
+            train_sampler.set_epoch(epoch)
 
         train_loss, train_acc = train_one_epoch(
             train_loader=train_loader,

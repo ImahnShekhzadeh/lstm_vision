@@ -21,6 +21,7 @@ from torch.utils.data import (
     IterableDataset,
     random_split,
 )
+from torch.utils.data.sampler import Sampler
 from torchvision import datasets, transforms
 
 from LSTM_model import LSTM
@@ -263,7 +264,7 @@ def seed_worker(worker_id: int) -> None:
     random.seed(worker_seed)
 
 
-def get_dataloaders(
+def get_samplers_loaders(
     train_dataset: datasets.VisionDataset,
     val_dataset: datasets.VisionDataset,
     test_dataset: datasets.VisionDataset,
@@ -272,9 +273,10 @@ def get_dataloaders(
     pin_memory: bool,
     use_ddp: bool = False,
     seed_number: Optional[int] = None,
-) -> Tuple[DataLoader, DataLoader, DataLoader]:
+) -> Tuple[Sampler, Sampler, DataLoader, DataLoader, DataLoader]:
     """
-    Get the dataloaders for the train, validation and test set.
+    Get the samplers for the train and validation as well as dataloaders for
+    the train, validation and test set.
 
     Args:
         train_dataset: Training set.
@@ -295,9 +297,16 @@ def get_dataloaders(
         "num_workers": num_workers,
         "pin_memory": pin_memory,
     }
+
+    # set samplers
+    train_sampler = DistributedSampler(train_dataset) if use_ddp else None
+    val_sampler = (
+        DistributedSampler(val_dataset, shuffle=False) if use_ddp else None
+    )
+
     train_loader = DataLoader(
         dataset=train_dataset,
-        sampler=DistributedSampler(train_dataset) if use_ddp else None,
+        sampler=train_sampler,
         shuffle=False if use_ddp else True,
         worker_init_fn=seed_worker,
         generator=torch.Generator().manual_seed(seed_number),
@@ -305,7 +314,7 @@ def get_dataloaders(
     )
     val_loader = DataLoader(
         dataset=val_dataset,
-        sampler=DistributedSampler(val_dataset) if use_ddp else None,
+        sampler=val_sampler,
         shuffle=False,
         worker_init_fn=seed_worker,
         generator=torch.Generator().manual_seed(seed_number),
@@ -317,7 +326,7 @@ def get_dataloaders(
         **loader_kwargs,
     )
 
-    return train_loader, val_loader, test_loader
+    return train_sampler, val_sampler, train_loader, val_loader, test_loader
 
 
 def get_git_info() -> None:

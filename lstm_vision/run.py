@@ -18,10 +18,10 @@ from utils import (
     check_config_keys,
     cleanup,
     count_parameters,
-    get_dataloaders,
     get_datasets,
     get_git_info,
     get_model,
+    get_samplers_loaders,
     load_checkpoint,
     setup,
 )
@@ -63,7 +63,13 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     )
 
     # get dataloaders
-    train_loader, val_loader, test_loader = get_dataloaders(
+    (
+        train_sampler,
+        val_sampler,
+        train_loader,
+        val_loader,
+        test_loader,
+    ) = get_samplers_loaders(
         train_dataset=train_dataset,
         val_dataset=val_dataset,
         test_dataset=test_dataset,
