@@ -75,7 +75,6 @@ class LSTM(nn.Module):
             device=x.device,
         )
 
-        # Forward prop:
         out, (hidden_state, cell_state) = self.LSTM(x, (h0, c0))
         out = self.dropout(out)
         out = out.reshape(out.shape[0], -1)

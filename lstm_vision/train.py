@@ -71,26 +71,22 @@ def train_and_validate(
         wandb_logging: API key for Weights & Biases.
     """
 
-    # check saving path
     if num_additional_cps >= 1:
         assert (
             saving_path is not None
         ), "Please provide a valid saving path for the additional checkpoints"
         os.makedirs(saving_path, exist_ok=True)
 
-    # define loss function
     loss_fn = nn.CrossEntropyLoss(
         reduction="sum", label_smoothing=label_smoothing
     )
 
-    # auxiliary variables
     start_time = start_timer(device=rank)
     min_val_loss = float("inf")
 
-    # AMP
+    # AMP (automatic mixed precision)
     scaler = GradScaler(enabled=use_amp)
 
-    # save or log if device is `cuda:0` or CPU
     save_or_log = rank in [
         0,
         torch.device("cuda:0"),
@@ -140,7 +136,6 @@ def train_and_validate(
         )
         val_loss *= world_size / len(val_loader.dataset)
 
-        # update checkpoint dict if val loss has decreased
         if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
             checkpoint_best = {
@@ -151,7 +146,6 @@ def train_and_validate(
                 "epoch": epoch,
             }
 
-        # save additional checkpoints
         if (
             (num_additional_cps >= 1)
             and ((epoch + 1) % (num_epochs // num_additional_cps) == 0)
@@ -178,7 +172,6 @@ def train_and_validate(
             )
 
         if save_or_log:
-            # log to Weights & Biases
             if wandb_logging:
                 wandb.log(
                     {
@@ -199,18 +192,16 @@ def train_and_validate(
             )
 
     if save_or_log:
-        # stop energy consumption measurement
         if rank != torch.device("cpu"):
             measurement = monitor.end_window("training")
 
-        # total number of training iterations
         num_iters = (
             math.ceil(
                 len(train_loader.dataset)
                 / (train_loader.batch_size * world_size)
             )
             * num_epochs
-        )
+        )  # total number of training iters
 
         log_training_stats(
             start_time=start_time,
@@ -220,8 +211,6 @@ def train_and_validate(
                 f"Training {num_epochs} epochs ({num_iters} iterations)"
             ),
         )
-
-        # save model and optimizer state dicts
         save_checkpoint(
             state=checkpoint_best,
             filename=os.path.join(
@@ -265,7 +254,7 @@ def train_one_epoch(
         accuracy on rank 0 or CPU.
     """
 
-    epoch_loss, num_correct, num_samples = 0, 0, 0  # auxiliary variables
+    epoch_loss, num_correct, num_samples = 0, 0, 0
     model.train()
 
     for batch_idx, (images, labels) in enumerate(train_loader):
@@ -295,7 +284,6 @@ def train_one_epoch(
 
         epoch_loss += loss.item() * num_grad_accum_steps
 
-        # calculate accuracy
         with torch.no_grad():
             max_indices = output.argmax(dim=1, keepdim=False)
             num_correct += (max_indices == labels).sum().cpu().item()
@@ -360,8 +348,6 @@ def validate_one_epoch(
             val_loss = loss_fn(val_output, val_labels)
 
         epoch_loss += val_loss.item()
-
-        # calculate accuracy
         val_max_indices = val_output.argmax(dim=1, keepdim=False)
         val_num_correct += (val_max_indices == val_labels).sum().item()
         batch_size = val_output.shape[0]

@@ -129,7 +129,6 @@ def get_confusion_matrix(
 
     logging.info(f"\nConfusion matrix:\n\n{confusion_matrix}")
 
-    # Convert PyTorch tensor to numpy array:
     fig = plt.figure()
     confusion_matrix = confusion_matrix.numpy()
     font = {"size": 7}

@@ -38,7 +38,7 @@ def total_norm__grads(model: nn.Module) -> float:
     total_norm = 0
     for p in model.parameters():
         if p.grad is not None:
-            param_norm = p.grad.data.norm(2)  # in case 2-norm is clipped
+            param_norm = p.grad.data.norm(2)  # L_2 norm is clipped
             total_norm += param_norm.item() ** 2
     total_norm = total_norm**0.5
 
@@ -73,7 +73,6 @@ def setup(
     os.environ["MASTER_ADDR"] = master_addr
     os.environ["MASTER_PORT"] = master_port
 
-    # initialize the process group
     dist.init_process_group(
         backend=backend,
         rank=rank,
@@ -116,7 +115,6 @@ def get_model(
         Model.
     """
 
-    # define model
     model = LSTM(
         input_size=input_size,
         sequence_length=sequence_length,
@@ -128,7 +126,6 @@ def get_model(
     )
     model.to(device)
 
-    # compile model if specified
     if compile_mode is not None:
         logging.info(f"\nCompiling model in ``{compile_mode}`` mode...\n")
         model = torch.compile(model, mode=compile_mode, fullgraph=False)
@@ -147,7 +144,6 @@ def check_config_keys(cfg: DictConfig) -> None:
         cfg: Configuration dictionary from hydra containing keys and values.
     """
 
-    # create saving dir if non-existent
     os.makedirs(cfg.training.saving_path, exist_ok=True)
 
     if cfg.training.num_additional_cps > cfg.training.num_epochs:
@@ -211,7 +207,6 @@ def get_datasets(
         Train, val and test datasets.
     """
 
-    # define data transformation:
     trafo = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -298,7 +293,6 @@ def get_samplers_loaders(
         "pin_memory": pin_memory,
     }
 
-    # set samplers
     train_sampler = DistributedSampler(train_dataset) if use_ddp else None
     val_sampler = (
         DistributedSampler(val_dataset, shuffle=False) if use_ddp else None
@@ -361,8 +355,6 @@ def start_timer(device: torch.device | int) -> float:
     """
     gc.collect()
 
-    # check if device is a ``torch.device`` object; if not, assume it's an
-    # int and convert it
     if not isinstance(device, torch.device):
         device = torch.device(
             f"cuda:{device}" if isinstance(device, int) else "cpu"
@@ -397,8 +389,6 @@ def log_training_stats(
         Time it took to execute the code.
     """
 
-    # check if device is a ``torch.device`` object; if not, assume it's an
-    # int and convert it
     if not isinstance(device, torch.device):
         device = torch.device(
             f"cuda:{device}" if isinstance(device, int) else "cpu"
@@ -433,11 +423,9 @@ def format_line(
 ) -> None:
     assert mode.lower() in ["train", "val"]
 
-    # calculate maximum width for each part
     max_epoch_width = len(f"{mode.capitalize()} epoch: {epoch}")
     max_sample_info_width = len(f"[{total_samples} / {total_samples} (100 %)]")
 
-    # format each part
     epoch_str = f"{mode.capitalize()} epoch: {epoch}".ljust(max_epoch_width)
     padded__current_sample = str(current_samples).zfill(
         len(str(total_samples))

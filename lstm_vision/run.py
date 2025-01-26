@@ -56,13 +56,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             master_port=cfg.training.master_port,
         )
 
-    # get datasets
     train_dataset, val_dataset, test_dataset = get_datasets(
         channels_img=cfg.dataset.channels_img,
         train_split=cfg.dataset.train_split,
     )
-
-    # get dataloaders
     (
         train_sampler,
         val_sampler,
@@ -80,13 +77,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         seed_number=cfg.training.seed_number,
     )
 
-    # define sequence length, input size of LSTM and number of classes based
-    # on input data
     seq_length = test_loader.dataset[0][0].shape[1]
     inp_size = test_loader.dataset[0][0].shape[2]
     num_classes = len(test_loader.dataset.classes)
 
-    # get model
     model = get_model(
         input_size=inp_size,
         num_layers=cfg.model.num_layers,
@@ -100,16 +94,12 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
-    # Get timestamp and configure saving name of best checkpoint
     timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
     saving_name_best_cp = f"lstm_best_cp_{timestamp}.pt"
 
-    # get git info, setup Weights & Biases, print # data and model summary
     if rank in [0, torch.device("cpu")]:
-        # check config flags
         check_config_keys(cfg)
 
-        # Setup Weights & Biases
         wandb_logging = cfg.training.wandb__api_key is not None
         if wandb_logging:
             wandb.login(key=cfg.training.wandb__api_key)
@@ -121,14 +111,12 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
                 ),
             )
 
-        # Log GPU devices
         if torch.cuda.is_available():
             list_gpus = [
                 torch.cuda.get_device_name(i) for i in range(world_size)
             ]
             logging.info(f"\nGPU(s): {list_gpus}\n")
 
-        # Log git commit and branch
         get_git_info()
 
         logging.info(
@@ -140,7 +128,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     else:
         wandb_logging = False
 
-    # Optimizer:
     optimizer = optim.AdamW(
         params=model.parameters(),
         lr=cfg.optim.learning_rate,
@@ -148,8 +135,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         eps=cfg.optim.eps,
         weight_decay=cfg.optim.weight_decay,
     )
-
-    # Set network to train mode:
     model.train()
 
     if cfg.model.loading_path is not None:
@@ -167,7 +152,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         )
 
     if cfg.training.num_epochs > 0:
-        # Train the network:
         train_and_validate(
             model=model,
             optimizer=optimizer,
@@ -207,7 +191,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             ),
         )
 
-    # check accuracy on train set
     train__num_correct, train__num_samples = check_accuracy(
         train_loader,
         model,
@@ -217,12 +200,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
-    # destroy process group if DDP was used (for clean exit)
     if cfg.training.use_ddp:
-        cleanup()
+        cleanup()  # destroy process group, clean exit
 
     if rank in [0, torch.device("cpu")]:
-        # check accuracy on test set
         test__num_correct, test__num_samples = check_accuracy(
             test_loader,
             model,
@@ -238,7 +219,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             f"accuracy {(100 * test__num_correct / test__num_samples):.2f} %"
         )
 
-        # produce confusion matrix
         get_confusion_matrix(
             num_classes,
             test_loader,
@@ -262,8 +242,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Configuration dictionary from hydra containing keys and values.
     """
 
-    # get world size (number of GPUs)
-    world_size = int(os.getenv("WORLD_SIZE", 1))
+    world_size = int(os.getenv("WORLD_SIZE", 1))  # num GPUs
 
     if cfg.training.use_ddp and world_size == 1:
         logging.warning(
