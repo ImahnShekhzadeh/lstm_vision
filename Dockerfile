@@ -3,8 +3,8 @@ FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 # Install `conda` (not present in CUDA image)
 # Use of miniconda since full anaconda distribution not needed
-ENV MINICONDA_VERSION Miniconda3-latest-Linux-x86_64.sh
-ENV MINICONDA_SHA_256 \
+ENV MINICONDA_VERSION=Miniconda3-latest-Linux-x86_64.sh
+ENV MINICONDA_SHA_256=\
 43651393236cb8bb4219dcd429b3803a60f318e5507d8d84ca00dafa0c69f1bb
 
 RUN apt-get update && apt-get install -y curl && \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y curl && \
 # Install specific python version
 # Update `conda`
 # Install `pip` via `conda`
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
 RUN conda init bash
 RUN conda install -y python=3.10.3
 RUN conda update -n base -c defaults conda
