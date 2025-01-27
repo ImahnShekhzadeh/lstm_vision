@@ -1,5 +1,4 @@
 import gc
-import json
 import logging
 import os
 import random
@@ -23,10 +22,12 @@ from torch.utils.data import (
 )
 from torch.utils.data.sampler import Sampler
 from torchvision import datasets, transforms
+from typeguard import typechecked
 
 from LSTM_model import LSTM
 
 
+@typechecked
 def total_norm__grads(model: nn.Module) -> float:
     """
     Calculate total norm of gradients.
@@ -45,13 +46,15 @@ def total_norm__grads(model: nn.Module) -> float:
     return total_norm
 
 
-def cleanup():
+@typechecked
+def cleanup() -> None:
     """
     Cleanup the distributed environment.
     """
     dist.destroy_process_group()
 
 
+@typechecked
 def setup(
     rank: int,
     world_size: int,
@@ -80,6 +83,7 @@ def setup(
     )
 
 
+@typechecked
 def get_model(
     input_size: int,
     num_layers: int,
@@ -136,6 +140,7 @@ def get_model(
     return model
 
 
+@typechecked
 def check_config_keys(cfg: DictConfig) -> None:
     """
     Check provided config flags.
@@ -191,10 +196,11 @@ def check_config_keys(cfg: DictConfig) -> None:
     )
 
 
+@typechecked
 def get_datasets(
     channels_img: int, train_split: float
 ) -> Tuple[
-    datasets.VisionDataset, datasets.VisionDataset, datasets.VisionDataset
+    torch.utils.data.Dataset, torch.utils.data.Dataset, torch.utils.data.Dataset
 ]:
     """
     Get the train, val and test datasets.
@@ -240,10 +246,10 @@ def get_datasets(
         target_transform=None,
         download=True,
     )
-
     return train_subset, val_subset, test_dataset
 
 
+@typechecked
 def seed_worker(worker_id: int) -> None:
     """
     Seed the worker for the dataloader. Function copy-pasted from [1].
@@ -259,16 +265,17 @@ def seed_worker(worker_id: int) -> None:
     random.seed(worker_seed)
 
 
+@typechecked
 def get_samplers_loaders(
-    train_dataset: datasets.VisionDataset,
-    val_dataset: datasets.VisionDataset,
-    test_dataset: datasets.VisionDataset,
+    train_dataset: torch.utils.data.Dataset,
+    val_dataset: torch.utils.data.Dataset,
+    test_dataset: torch.utils.data.Dataset,
     batch_size: int,
     num_workers: int,
     pin_memory: bool,
     use_ddp: bool = False,
     seed_number: Optional[int] = None,
-) -> Tuple[Sampler, Sampler, DataLoader, DataLoader, DataLoader]:
+) -> Tuple[Optional[Sampler], Optional[Sampler], DataLoader, DataLoader, DataLoader]:
     """
     Get the samplers for the train and validation as well as dataloaders for
     the train, validation and test set.
@@ -284,7 +291,7 @@ def get_samplers_loaders(
         seed_number: Seed number for the `torch.Generator` object if provided.
 
     Returns:
-        Train, val and test loader
+        Train and val samplers (if `use_ddp`), train, val and test loaders
     """
 
     loader_kwargs = {
@@ -323,6 +330,7 @@ def get_samplers_loaders(
     return train_sampler, val_sampler, train_loader, val_loader, test_loader
 
 
+@typechecked
 def get_git_info() -> None:
     """Get the git branch name and the git SHA."""
     try:
@@ -342,6 +350,7 @@ def get_git_info() -> None:
         logging.warn("Git info not found. Moving right along...")
 
 
+@typechecked
 def start_timer(device: torch.device | int) -> float:
     """
     Start the timer.
@@ -368,6 +377,7 @@ def start_timer(device: torch.device | int) -> float:
     return perf_counter()
 
 
+@typechecked
 def log_training_stats(
     start_time: float,
     energy_consump: float,
@@ -413,6 +423,7 @@ def log_training_stats(
     return time_diff
 
 
+@typechecked
 def format_line(
     mode: str,
     epoch: int,
@@ -438,6 +449,7 @@ def format_line(
     return f"{epoch_str}  {sample_info_str}  {loss_str}"
 
 
+@typechecked
 def print__batch_info(
     mode: str,
     batch_idx: int,
@@ -486,9 +498,10 @@ def print__batch_info(
         logging.info(f"{formatted_line}")
 
 
+@typechecked
 def load_checkpoint(
     model: nn.Module,
-    checkpoint: dict[torch.Tensor, torch.Tensor],
+    checkpoint: Dict,
     optimizer: Optional[torch.optim.Optimizer] = None,
 ) -> None:
     """Load an existing checkpoint of the model to continue training.
@@ -529,6 +542,7 @@ def load_checkpoint(
     logging.info(loading_msg)
 
 
+@typechecked
 def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
     """
     Save checkpoint.
@@ -553,6 +567,7 @@ def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
     torch.save(state, filename)
 
 
+@typechecked
 def count_parameters(model: nn.Module) -> None:
     """Print the number of parameters per module.
 

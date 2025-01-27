@@ -8,9 +8,9 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 from torch import distributed as dist
-from torch import multiprocessing as mp
 from torch import optim
 from torchinfo import summary
+from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
 from train import train_and_validate
@@ -27,6 +27,7 @@ from utils import (
 )
 
 
+@typechecked
 def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     """
     Run LSTM on MNIST data.
@@ -234,6 +235,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 
 
 @hydra.main(version_base=None, config_path="/app/configs", config_name="conf")
+@typechecked
 def main(cfg: DictConfig) -> None:
     """
     Main.

@@ -4,12 +4,14 @@ from typing import Tuple
 
 import numpy as np
 import torch
+from typeguard import typechecked
 from matplotlib import pyplot as plt
 from torch import autocast, distributed, nn
 from torch.utils.data import DataLoader
 
 
 @torch.no_grad()
+@typechecked
 def check_accuracy(
     loader: DataLoader,
     model: nn.Module,
@@ -75,6 +77,7 @@ def check_accuracy(
 
 
 @torch.no_grad()
+@typechecked
 def get_confusion_matrix(
     num_classes: int,
     test_loader: DataLoader,

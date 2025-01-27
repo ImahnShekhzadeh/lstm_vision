@@ -1,7 +1,9 @@
 import torch
 from torch import nn
+from typeguard import typechecked
 
 
+@typechecked
 class LSTM(nn.Module):
     """
     This class creates an NN for the MNIST dataset. The MNIST dataset has
@@ -19,7 +21,7 @@ class LSTM(nn.Module):
         num_classes: int,
         bidirectional: bool,
         dropout_rate: float,
-    ):
+    ) -> None:
         """
         Args:
             input_size: input is assumed to be in shape `(N, 1, H, W)`,
@@ -58,8 +60,16 @@ class LSTM(nn.Module):
             out_features=num_classes,
         )
 
-    def forward(self, x):
-        """Standard forward pass."""
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Standard forward pass.
+        
+        Args:
+            x: Input tensor to be passed through the LSTM.
+        
+        Returns:
+            Output of the LSTM, reshaped.
+        """
 
         # Initialize hidden state:
         h0 = torch.zeros(
