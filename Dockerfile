@@ -1,6 +1,6 @@
 FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
-ENV MINICONDA_VERSION=Miniconda3-latest-Linux-x86_64.sh
+ENV MINICONDA_VERSION=Miniconda3-py310_24.3.0-0-Linux-x86_64.sh
 ENV MINICONDA_SHA_256=\
 43651393236cb8bb4219dcd429b3803a60f318e5507d8d84ca00dafa0c69f1bb
 
