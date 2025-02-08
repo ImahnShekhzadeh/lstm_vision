@@ -21,6 +21,7 @@ dependencies = [
     "zeus-ml==0.9.*",
     "hydra-core==1.3.*",
     "typeguard==4.4.*",
+    "numpy==1.26.*",
     "torch==2.1.2",
 ]
 

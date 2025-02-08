@@ -13,6 +13,7 @@ On a single-GPU machine, I ran the script `run.py` as follows:
 docker build -f Dockerfile -t lstm-vision:1.4.0 .
 docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 python -B /app/lstm_vision/run.py training.saving_path=[...]
 ```
+The first time you run the `docker run [...]` command, packages will be prepared. This might take some time, however, it is a one-time thing.\
 To check all available config keys, check out the file `configs/conf.yaml`.
 
 If you only want to evaluate the model from a pre-existing checkpoint, add

@@ -16,7 +16,7 @@ ENV PATH="/root/.local/bin/:$PATH"
 RUN uv self update && \
     uv python install 3.10 && \
     uv venv --python 3.10 && \
-    uv pip install --no-cache-dir -e .
+    uv pip install -e .
 
 # Expose network port
 EXPOSE 80
