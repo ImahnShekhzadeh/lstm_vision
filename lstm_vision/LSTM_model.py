@@ -63,10 +63,10 @@ class LSTM(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Standard forward pass.
-        
+
         Args:
             x: Input tensor to be passed through the LSTM.
-        
+
         Returns:
             Output of the LSTM, reshaped.
         """

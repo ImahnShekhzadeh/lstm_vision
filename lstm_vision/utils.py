@@ -200,7 +200,9 @@ def check_config_keys(cfg: DictConfig) -> None:
 def get_datasets(
     channels_img: int, train_split: float
 ) -> Tuple[
-    torch.utils.data.Dataset, torch.utils.data.Dataset, torch.utils.data.Dataset
+    torch.utils.data.Dataset,
+    torch.utils.data.Dataset,
+    torch.utils.data.Dataset,
 ]:
     """
     Get the train, val and test datasets.
@@ -275,7 +277,9 @@ def get_samplers_loaders(
     pin_memory: bool,
     use_ddp: bool = False,
     seed_number: Optional[int] = None,
-) -> Tuple[Optional[Sampler], Optional[Sampler], DataLoader, DataLoader, DataLoader]:
+) -> Tuple[
+    Optional[Sampler], Optional[Sampler], DataLoader, DataLoader, DataLoader
+]:
     """
     Get the samplers for the train and validation as well as dataloaders for
     the train, validation and test set.

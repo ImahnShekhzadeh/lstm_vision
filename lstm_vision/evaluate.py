@@ -4,10 +4,10 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from typeguard import typechecked
 from matplotlib import pyplot as plt
 from torch import autocast, distributed, nn
 from torch.utils.data import DataLoader
+from typeguard import typechecked
 
 
 @torch.no_grad()
