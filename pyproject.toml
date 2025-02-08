@@ -1,5 +1,4 @@
 [project]
-
 name = "lstm-vision"
 version = "1.2.0"
 description = "LSTMs for computer vision (classification)"
