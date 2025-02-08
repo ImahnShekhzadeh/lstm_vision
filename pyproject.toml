@@ -23,6 +23,7 @@ dependencies = [
     "typeguard==4.4.*",
     "numpy==1.26.*",
     "torch==2.1.2",
+    "torchvision==0.16.2",
 ]
 
 # https://docs.astral.sh/uv/guides/integration/pytorch/#installing-pytorch

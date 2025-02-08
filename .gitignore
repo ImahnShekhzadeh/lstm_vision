@@ -21,3 +21,6 @@ multirun
 
 # wandb
 wandb
+
+# uv
+uv.lock
