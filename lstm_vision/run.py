@@ -40,8 +40,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         cfg: Configuration dictionary from hydra containing keys and values.
     """
 
-    # set random seed, each process gets different seed
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+
     if cfg.training.seed_number is not None:
+        # set random seed, each process gets different seed
         torch.manual_seed(cfg.training.seed_number + rank)
 
     if cfg.training.use_ddp:
@@ -165,7 +167,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             val_loader=val_loader,
             timestamp=None if rank > 0 else timestamp,
             num_additional_cps=cfg.training.num_additional_cps,
-            saving_path=cfg.training.saving_path,
+            saving_path=output_dir,
             saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
             label_smoothing=cfg.training.label_smoothing,
             freq_output__train=cfg.training.freq_output__train,
@@ -187,7 +189,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         load_checkpoint(
             model=model,
             checkpoint=torch.load(
-                os.path.join(cfg.training.saving_path, saving_name_best_cp),
+                os.path.join(output_dir, saving_name_best_cp),
                 map_location=map_location,
             ),
         )
@@ -225,7 +227,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             test_loader,
             model,
             use_amp=cfg.training.use_amp,
-            saving_path=cfg.training.saving_path,
+            saving_path=output_dir,
             device=rank,
             timestamp=timestamp,
         )
