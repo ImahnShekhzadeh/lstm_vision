@@ -97,8 +97,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
-    timestamp = dt.now().strftime("%dp%mp%Y_%Hp%Mp%S")
-    saving_name_best_cp = f"lstm_best_cp_{timestamp}.pt"
+    saving_name_best_cp = f"lstm_best_cp.pt"
 
     if rank in [0, torch.device("cpu")]:
         check_config_keys(cfg)
@@ -108,7 +107,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             wandb.login(key=cfg.training.wandb__api_key)
             wandb.init(
                 project="lstm_vision",
-                name=timestamp,
+                name=dt.now().strftime("%dp%mp%Y_%Hp%Mp%S"),
                 config=OmegaConf.to_container(
                     cfg, resolve=True, throw_on_missing=True
                 ),
@@ -165,7 +164,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             use_amp=cfg.training.use_amp,
             train_loader=train_loader,
             val_loader=val_loader,
-            timestamp=None if rank > 0 else timestamp,
             num_additional_cps=cfg.training.num_additional_cps,
             saving_path=output_dir,
             saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
@@ -229,7 +227,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             use_amp=cfg.training.use_amp,
             saving_path=output_dir,
             device=rank,
-            timestamp=timestamp,
         )
 
         if wandb_logging:

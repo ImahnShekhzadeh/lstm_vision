@@ -85,7 +85,6 @@ def get_confusion_matrix(
     use_amp: bool,
     saving_path: str,
     device: int | torch.device,
-    timestamp: str,
 ) -> np.ndarray:
     """
     Produce a confusion matrix based on the test set.
@@ -97,7 +96,6 @@ def get_confusion_matrix(
         use_amp: Whether to use automatic mixed precision.
         saving_path: Saving path where the confusion matrix is stored.
         device: Device on which the code is executed.
-        timestamp: Timestamp of the current run.
 
     Returns:
         Confusion matrix.
@@ -148,7 +146,7 @@ def get_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            f"confusion_matrix_{timestamp}.pdf",
+            f"confusion_matrix.pdf",
         ),
         bbox_inches="tight",
         pad_inches=0.01,

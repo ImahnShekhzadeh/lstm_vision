@@ -34,7 +34,6 @@ def train_and_validate(
     train_loader: DataLoader,
     val_loader: DataLoader,
     train_sampler: Optional[Sampler] = None,
-    timestamp: Optional[str] = None,
     num_additional_cps: int = 0,
     saving_path: Optional[str] = None,
     saving_name_best_cp: Optional[str] = None,
@@ -58,7 +57,6 @@ def train_and_validate(
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
         train_sampler: Sampler for the training set.
-        timestamp: Timestamp of the current run.
         num_additional_cps: Number of checkpoints to save (one is always saved
             at the lowest validation loss)
         saving_path: Directory path to save the checkpoints.
@@ -158,10 +156,7 @@ def train_and_validate(
                 "val_acc": val_acc,
                 "epoch": epoch,
             }
-            if timestamp is None:
-                saving_name = f"cp_epoch_{epoch}.pt"
-            else:
-                saving_name = f"cp_epoch_{epoch}_{timestamp}.pt"
+            saving_name = f"cp_epoch_{epoch}.pt"
 
             save_checkpoint(
                 state=checkpoint,
