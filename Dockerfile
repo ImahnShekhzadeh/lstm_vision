@@ -1,6 +1,7 @@
 FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
-RUN apt-get update && apt-get install -y curl ca-certificates git && \
+RUN apt-get update && \
+    apt-get install -y curl ca-certificates git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -16,8 +17,5 @@ ENV PATH="/root/.local/bin/:$PATH"
 RUN uv python install 3.10 && \
     uv venv --python 3.10 && \
     uv pip install -e .
-
-# Expose network port
-EXPOSE 80
 
 RUN git config --global --add safe.directory /app
