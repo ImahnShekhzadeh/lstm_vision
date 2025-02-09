@@ -14,8 +14,8 @@ COPY pyproject.toml .
 ADD https://astral.sh/uv/0.5.29/install.sh /uv-installer.sh
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
-RUN uv python install 3.10 && \
-    uv venv --python 3.10 && \
+RUN uv python install 3.10.3 && \
+    uv venv --python 3.10.3 && \
     uv pip install -e .
 
 RUN git config --global --add safe.directory /app
