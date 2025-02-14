@@ -39,6 +39,13 @@ training.wandb__api_key=<your_key>
 # training.wandb__api_key=2fru...
 ```
 
+## `isort` \& `black`
+To `isort` and `black` format the Python scripts, run
+```Docker
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 uv run isort /app/lstm_vision/. &&
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 uv run black /app/lstm_vision/.
+```
+
 ## Results
 
 All results were obtained on a single GPU. For this small model, I do not recommend a DDP setup.
