@@ -343,15 +343,16 @@ def get_git_info() -> None:
             timeout=10,
             stdout=subprocess.PIPE,
         )
-        git_branch_name = c.stdout.decode().strip()
-        c = subprocess.run(
+        d = subprocess.run(
             ["git", "rev-parse", "HEAD"], timeout=10, stdout=subprocess.PIPE
         )
-        git_sha = c.stdout.decode().strip()
-        logging.info(f"Git branch: {git_branch_name}, commit: {git_sha}\n")
     except subprocess.TimeoutExpired as e:
         logging.exception(e)
         logging.warn("Git info not found. Moving right along...")
+    else:
+        git_branch_name = c.stdout.decode().strip()
+        git_sha = d.stdout.decode().strip()
+        logging.info(f"Git branch: {git_branch_name}, commit: {git_sha}")
 
 
 @typechecked
@@ -525,8 +526,8 @@ def load_checkpoint(
         for k, v in checkpoint["state_dict"].items():
             new_state_dict[k.replace("module.", "")] = v
         model.load_state_dict(state_dict=new_state_dict)
-
-    loading_msg = "=> Checkpoint loaded."
+    else:
+        loading_msg = "=> Checkpoint loaded."
 
     if optimizer is not None:
         optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
