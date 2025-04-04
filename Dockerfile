@@ -10,10 +10,12 @@ WORKDIR /app
 COPY setup.py .
 COPY pyproject.toml .
 
-# Install `uv` acc. to the instructions https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+# Install uv acc. to the instructions https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
 ADD https://astral.sh/uv/0.5.29/install.sh /uv-installer.sh
 RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
+
+# Install python with uv
 RUN uv python install 3.10.3 && \
     uv venv --python 3.10.3 && \
     uv pip install -e .
