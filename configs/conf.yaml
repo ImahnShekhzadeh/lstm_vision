@@ -33,7 +33,7 @@ training:
   wandb__api_key: null
   compile_mode: null  # `torch.compile()`
   num_additional_cps: 2
-  saving_path: "outputs/0"
+  saving_path: "outputs"
   label_smoothing: 0.1
   freq_output__train: null  # logging frequency training
   freq_output__val: null    # logging frequency validation
