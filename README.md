@@ -18,7 +18,11 @@ To check all available config keys, check out the file `configs/conf.yaml`.
 
 If you only want to evaluate the model from a pre-existing checkpoint, add
 ```
-model.loading_path=[...] training.num_epochs=0
+model.loading_path=... training.num_epochs=0
+```
+Depending on your GPU, you might have to choose a lower batch size via
+```
+training.batch_size=...
 ```
 
 ### Multiple GPUs
