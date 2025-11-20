@@ -561,7 +561,7 @@ def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
         or filename.endswith(".pth")
         or filename.endswith(".pth.tar")
     ), "The checkpoint does not have a correct file ending!"
-    
+
     log_msg = f"\n=> Saving checkpoint '{filename}' "
     if "val_loss" in state.keys():
         log_msg += (
