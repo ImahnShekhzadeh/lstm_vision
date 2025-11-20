@@ -70,10 +70,9 @@ class LSTM(nn.Module):
         Returns:
             Output of the LSTM, reshaped.
         """
-
         out, (_, _) = self.LSTM(x)
         out = self.dropout(out)
         out = out.reshape(out.shape[0], -1)
         out = self.fc(out)
-        
+
         return out
