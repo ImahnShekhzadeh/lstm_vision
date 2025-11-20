@@ -71,22 +71,9 @@ class LSTM(nn.Module):
             Output of the LSTM, reshaped.
         """
 
-        # Initialize hidden state:
-        h0 = torch.zeros(
-            self.num_layers * self.num_directions,
-            x.size(0),
-            self.hidden_size,
-            device=x.device,
-        )
-        c0 = torch.zeros(
-            self.num_layers * self.num_directions,
-            x.size(0),
-            self.hidden_size,
-            device=x.device,
-        )
-
-        out, (hidden_state, cell_state) = self.LSTM(x, (h0, c0))
+        out, (_, _) = self.LSTM(x)
         out = self.dropout(out)
         out = out.reshape(out.shape[0], -1)
         out = self.fc(out)
+        
         return out
