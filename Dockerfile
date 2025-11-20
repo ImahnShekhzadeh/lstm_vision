@@ -16,8 +16,8 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
 
 # Install python with uv
-RUN uv python install 3.10.3 && \
-    uv venv --python 3.10.3 && \
+RUN uv python install 3.11.11 && \
+    uv venv --python 3.11.11 && \
     uv pip install -e .
 
 RUN git config --global --add safe.directory /app
