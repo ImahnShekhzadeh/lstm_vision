@@ -10,8 +10,8 @@ Note that this repository is more for showing that LSTMs can also be used to do 
 ### Single-GPU
 On a single-GPU machine, I ran the script `run.py` as follows:
 ```
-docker build -f Dockerfile -t lstm-vision:1.4.0 .
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 uv run /app/lstm_vision/run.py
+docker build -f Dockerfile -t lstm-vision:1.5.0 .
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.5.0 uv run /app/lstm_vision/run.py
 ```
 The first time you run the `docker run [...]` command, packages will be prepared. This might take some time, however, it is a one-time thing.\
 To check all available config keys, check out the file `configs/conf.yaml`.
@@ -28,7 +28,7 @@ training.batch_size=...
 ### Multiple GPUs
 You can easily specify to use [DistributedDataParallel](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) during training, which uses several GPUs if available:
 ```
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.5.0 torchrun --nproc_per_node=NUM_GPUS_YOU_HAVE /app/lstm_vision/run.py training.use_ddp=true training.master_addr='"<ip-address>"'
 - training.master_port='"<port>"'
 ```
 where the master address is the IP address that can be obtained via `hostname -I`. If you only want to evaluate the model from a pre-existing checkpoint, add
@@ -46,7 +46,7 @@ training.wandb__api_key=<your_key>
 ## `isort` \& `black`
 To `isort` and `black` format the Python scripts, run
 ```Docker
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.4.0 /bin/bash -c "uv run isort /app/lstm_vision/. && uv run black /app/lstm_vision/." 
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.5.0 /bin/bash -c "uv run isort /app/lstm_vision/. && uv run black /app/lstm_vision/." 
 ```
 
 ## Results
