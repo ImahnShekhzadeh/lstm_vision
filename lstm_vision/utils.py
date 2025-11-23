@@ -21,7 +21,8 @@ from torch.utils.data import (
     random_split,
 )
 from torch.utils.data.sampler import Sampler
-from torchvision import datasets, transforms
+from torchvision.datasets import MNIST
+from torchvision.transforms import v2
 from typeguard import typechecked
 
 from LSTM_model import LSTM
@@ -215,17 +216,17 @@ def get_datasets(
         Train, val and test datasets.
     """
 
-    trafo = transforms.Compose(
+    trafo = v2.Compose(
         [
-            transforms.ToTensor(),
-            transforms.Normalize(
+            v2.ToTensor(),
+            v2.Normalize(
                 mean=[0.5 for _ in range(channels_img)],
                 std=[0.5 for _ in range(channels_img)],
             ),
         ]
     )
 
-    full_train_dataset = datasets.MNIST(
+    full_train_dataset = MNIST(
         root="",
         train=True,
         transform=trafo,
@@ -241,7 +242,7 @@ def get_datasets(
             len(full_train_dataset) - num__train_samples,
         ],
     )
-    test_dataset = datasets.MNIST(
+    test_dataset = MNIST(
         root="",
         train=False,
         transform=trafo,
