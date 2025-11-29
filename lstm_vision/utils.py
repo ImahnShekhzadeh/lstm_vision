@@ -131,10 +131,6 @@ def get_model(
     )
     model.to(device)
 
-    if compile_mode is not None:
-        logging.info(f"\nCompiling model in ``{compile_mode}`` mode...\n")
-        model = torch.compile(model, mode=compile_mode, fullgraph=False)
-
     if use_ddp:
         model = DDP(model, device_ids=[device])
 
@@ -165,15 +161,6 @@ def check_config_keys(cfg: DictConfig) -> None:
             f"only, no training will be performed."
         )
 
-    assert cfg.training.compile_mode in [
-        None,
-        "default",
-        "reduce-overhead",
-        "max-autotune",
-    ], (
-        f"``{cfg.training.compile_mode}`` is not a valid compile mode in "
-        "``torch.compile()``."
-    )
     if cfg.dataloading.pin_memory and not torch.cuda.is_available():
         # pinned memory only available for GPUs:
         cfg.dataloading.pin_memory = False

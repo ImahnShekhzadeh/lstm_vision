@@ -31,7 +31,6 @@ training:
   num_grad_accum_steps: 1
   num_epochs: 50
   wandb__api_key: null
-  compile_mode: null  # `torch.compile()`
   num_additional_cps: 2
   saving_path: "outputs"
   label_smoothing: 0.1
