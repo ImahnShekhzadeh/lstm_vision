@@ -148,7 +148,9 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             model=model,
             optimizer=optimizer,
             checkpoint=torch.load(
-                cfg.model.loading_path, map_location=map_location
+                cfg.model.loading_path,
+                map_location=map_location,
+                weights_only=True,
             ),
         )
 
@@ -188,6 +190,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             checkpoint=torch.load(
                 os.path.join(output_dir, saving_name_best_cp),
                 map_location=map_location,
+                weights_only=True,
             ),
         )
 
