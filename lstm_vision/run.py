@@ -93,7 +93,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         bidirectional=cfg.model.bidirectional,
         dropout_rate=cfg.model.dropout,
         device=rank,
-        compile_mode=cfg.training.compile_mode,
         use_ddp=cfg.training.use_ddp,
     )
 
