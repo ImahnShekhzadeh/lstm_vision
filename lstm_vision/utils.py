@@ -205,7 +205,8 @@ def get_datasets(
 
     trafo = v2.Compose(
         [
-            v2.ToTensor(),
+            v2.PILToTensor(),
+            v2.ConvertImageDtype(torch.float32),
             v2.Normalize(
                 mean=[0.5 for _ in range(channels_img)],
                 std=[0.5 for _ in range(channels_img)],
