@@ -25,6 +25,7 @@ from utils import (
     setup,
 )
 
+str__cuda_0 = "cuda:0"
 
 @typechecked
 def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
@@ -139,9 +140,9 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 
     if cfg.model.loading_path is not None:
         if rank == torch.device("cpu"):
-            map_location = {"cuda:0": "cpu"}
+            map_location = {str__cuda_0: "cpu"}
         else:
-            map_location = {"cuda:0": f"cuda:{rank}"}
+            map_location = {str__cuda_0: f"cuda:{rank}"}
 
         load_checkpoint(
             model=model,
@@ -181,9 +182,9 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         if cfg.training.use_ddp:
             dist.barrier()
         if rank == torch.device("cpu"):
-            map_location = {"cuda:0": "cpu"}
+            map_location = {str__cuda_0: "cpu"}
         else:
-            map_location = {"cuda:0": f"cuda:{rank}"}
+            map_location = {str__cuda_0: f"cuda:{rank}"}
         load_checkpoint(
             model=model,
             checkpoint=torch.load(
