@@ -43,7 +43,7 @@ def train_and_validate(
     freq_output__val: Optional[int] = 10,
     max_norm: Optional[float] = None,
     wandb_logging: bool = False,
-) -> Dict:
+) -> None:
     """
     Train and validate the model. The code will always save a checkpoint
     corresponding to the model on rank 0 with lowest validation loss.
@@ -226,7 +226,7 @@ def train_one_epoch(
     optimizer: torch.optim.Optimizer,
     loss_fn: nn.modules.loss._WeightedLoss,
     num_grad_accum_steps: int,
-    scaler: torch.cuda.amp.grad_scaler.GradScaler,
+    scaler: torch.amp.GradScaler,
     rank: int | torch.device,
     use_amp: bool,
     epoch: int,
