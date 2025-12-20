@@ -24,3 +24,6 @@ wandb
 
 # uv
 uv.lock
+
+# Sonar
+.sonar
