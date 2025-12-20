@@ -425,7 +425,7 @@ def format_line(
     total_samples: int,
     percentage: float,
     loss: Tensor,
-) -> None:
+) -> str:
     assert mode.lower() in ["train", "val"]
 
     max_epoch_width = len(f"{mode.capitalize()} epoch: {epoch}")
