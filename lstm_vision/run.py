@@ -12,7 +12,7 @@ from torchinfo import summary
 from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
-from train import train_and_validate
+from train import str__cuda_0, train_and_validate
 from utils import (
     check_config_keys,
     cleanup,
@@ -24,7 +24,6 @@ from utils import (
     load_checkpoint,
     setup,
 )
-from train import str__cuda_0
 
 
 @typechecked
