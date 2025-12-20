@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import wandb
 from torch import autocast, nn
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import Sampler
@@ -83,7 +83,10 @@ def train_and_validate(
     min_val_loss = float("inf")
 
     # AMP (automatic mixed precision)
-    scaler = GradScaler(enabled=use_amp)
+    if rank == 0:
+        scaler = GradScaler("cuda", enabled=use_amp)
+    else:
+        scaler = GradScaler("cpu", enabled=use_amp)
 
     save_or_log = rank in [
         0,
