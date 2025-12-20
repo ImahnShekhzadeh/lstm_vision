@@ -101,7 +101,6 @@ def get_confusion_matrix(
         Confusion matrix.
     """
     model.eval()
-    counter = 0
     confusion_matrix = torch.zeros(num_classes, num_classes)
 
     for i, (inputs, classes) in enumerate(test_loader):
@@ -117,7 +116,6 @@ def get_confusion_matrix(
         preds = outputs.argmax(dim=1)
         for t, p in zip(classes.view(-1), preds.view(-1)):
             confusion_matrix[t, p] += 1
-            counter += 1
 
     # Because of the random split in the datasets, the classes are imbalanced.
     # Thus, we should do a normalization across each label in the confusion
@@ -130,7 +128,6 @@ def get_confusion_matrix(
 
     logging.info(f"\nConfusion matrix:\n\n{confusion_matrix}")
 
-    fig = plt.figure()
     confusion_matrix = confusion_matrix.numpy()
     font = {"size": 7}
     for (i, j), label in np.ndenumerate(confusion_matrix):
