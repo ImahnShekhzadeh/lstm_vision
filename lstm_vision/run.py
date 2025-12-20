@@ -96,7 +96,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
-    saving_name_best_cp = f"lstm_best_cp.pt"
+    saving_name_best_cp = "lstm_best_cp.pt"
 
     if rank in [0, torch.device("cpu")]:
         check_config_keys(cfg)
