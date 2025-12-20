@@ -3,9 +3,8 @@ import math
 import os
 from copy import deepcopy
 from time import perf_counter
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
-import numpy as np
 import torch
 import wandb
 from torch import autocast, nn

@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 from datetime import datetime as dt
 
 import hydra
