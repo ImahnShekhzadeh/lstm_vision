@@ -146,7 +146,7 @@ def get_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            f"confusion_matrix.pdf",
+            "confusion_matrix.pdf",
         ),
         bbox_inches="tight",
         pad_inches=0.01,
