@@ -21,6 +21,7 @@ from utils import (
     save_checkpoint,
     start_timer,
 )
+from run import str__cuda_0
 
 
 @typechecked
@@ -91,7 +92,7 @@ def train_and_validate(
 
     save_or_log = rank in [
         0,
-        torch.device("cuda:0"),
+        torch.device(str__cuda_0),
         torch.device("cuda"),
         torch.device("cpu"),
     ]
@@ -291,7 +292,7 @@ def train_one_epoch(
 
         if rank in [
             0,
-            torch.device("cuda:0"),
+            torch.device(str__cuda_0),
             torch.device("cuda"),
             torch.device("cpu"),
         ]:
@@ -356,7 +357,7 @@ def validate_one_epoch(
 
         if rank in [
             0,
-            torch.device("cuda:0"),
+            torch.device(str__cuda_0),
             torch.device("cuda"),
             torch.device("cpu"),
         ]:
