@@ -7,13 +7,13 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from typeguard import typechecked
 import wandb
 from torch import autocast, nn
 from torch.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import Sampler
+from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from utils import (
