@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
+from typeguard import typechecked
 import wandb
 from torch import autocast, nn
 from torch.amp import GradScaler
@@ -23,6 +24,7 @@ from utils import (
 )
 
 
+@typechecked
 def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -218,6 +220,7 @@ def train_and_validate(
         )
 
 
+@typechecked
 def train_one_epoch(
     train_loader: DataLoader,
     model: nn.Module,
@@ -306,6 +309,7 @@ def train_one_epoch(
 
 
 @torch.no_grad()
+@typechecked
 def validate_one_epoch(
     model: nn.Module,
     val_loader: DataLoader,
