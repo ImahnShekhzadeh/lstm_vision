@@ -21,7 +21,8 @@ from utils import (
     save_checkpoint,
     start_timer,
 )
-from run import str__cuda_0
+
+str__cuda_0 = "cuda:0"
 
 
 @typechecked
@@ -100,7 +101,7 @@ def train_and_validate(
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
     if save_or_log and rank != torch.device("cpu"):
-        monitor = ZeusMonitor(gpu_indices=[i for i in range(world_size)])
+        monitor = ZeusMonitor(gpu_indices=list(range(world_size)))
         monitor.begin_window("training")
 
     for epoch in range(num_epochs):

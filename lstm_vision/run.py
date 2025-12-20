@@ -24,8 +24,8 @@ from utils import (
     load_checkpoint,
     setup,
 )
+from train import str__cuda_0
 
-str__cuda_0 = "cuda:0"
 
 @typechecked
 def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
