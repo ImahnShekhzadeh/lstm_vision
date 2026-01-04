@@ -4,7 +4,6 @@ from typing import Optional, Tuple
 
 import torch
 from torch import autocast, nn
-from torch.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import Sampler
@@ -12,6 +11,7 @@ from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from utils import (
+    get__gradient_scaler,
     get__save_or_log,
     log__after_epoch,
     print__batch_info,
@@ -79,16 +79,9 @@ def train_and_validate(
     loss_fn = nn.CrossEntropyLoss(
         reduction="sum", label_smoothing=label_smoothing
     )
-
-    start_time = start_timer(device=rank)
+    scaler = get__gradient_scaler(rank=rank, use_amp=use_amp)
     min_val_loss = float("inf")
     save_or_log = get__save_or_log(rank=rank)
-
-    # AMP (automatic mixed precision)
-    if rank == 0:
-        scaler = GradScaler("cuda", enabled=use_amp)
-    else:
-        scaler = GradScaler("cpu", enabled=use_amp)
 
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
@@ -96,6 +89,7 @@ def train_and_validate(
         monitor = ZeusMonitor(gpu_indices=list(range(world_size)))
         monitor.begin_window("training")
 
+    start_time = start_timer(device=rank)
     for epoch in range(num_epochs):
         start_time__epoch = start_timer(device=rank)
 

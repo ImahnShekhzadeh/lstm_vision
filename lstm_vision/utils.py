@@ -15,6 +15,7 @@ from prettytable import PrettyTable
 from torch import Tensor
 from torch import distributed as dist
 from torch import nn
+from torch.amp import GradScaler
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import (
     DataLoader,
@@ -29,6 +30,30 @@ from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from LSTM_model import LSTM
+
+
+@typechecked
+def get__gradient_scaler(
+    rank: int | torch.device,
+    use_amp: bool,
+) -> GradScaler:
+    """
+    Get gradient scaler for automatic mixed precision.
+
+    Args:
+       rank: Device on which the code is executed.
+       use_amp: Whether to use automatic mixed precision.
+
+    Returns:
+        Gradient scaler.
+    """
+
+    if rank == 0:
+        scaler = GradScaler("cuda", enabled=use_amp)
+    else:
+        scaler = GradScaler("cpu", enabled=use_amp)
+
+    return scaler
 
 
 @typechecked
