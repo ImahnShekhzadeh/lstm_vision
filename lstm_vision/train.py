@@ -5,7 +5,6 @@ from time import perf_counter
 from typing import Optional, Tuple
 
 import torch
-import wandb
 from torch import autocast, nn
 from torch.amp import GradScaler
 from torch.nn.utils import clip_grad_norm_
@@ -16,6 +15,7 @@ from zeus.monitor import ZeusMonitor
 
 from utils import (
     get__save_or_log,
+    log__after_epoch,
     print__batch_info,
     save_checkpoint,
     save_cp_log__after_training,
@@ -69,7 +69,7 @@ def train_and_validate(
         freq_output__train: Frequency at which to print the training info.
         freq_output__val: Frequency at which to print the validation info.
         max_norm: Maximum norm of the gradients.
-        wandb_logging: API key for Weights & Biases.
+        wandb_logging: Whether logging to Weights & Biases occurs.
     """
 
     if num_additional_cps >= 1:
@@ -99,7 +99,7 @@ def train_and_validate(
         monitor.begin_window("training")
 
     for epoch in range(num_epochs):
-        t0 = start_timer(device=rank)
+        start_time__epoch = start_timer(device=rank)
 
         if train_sampler is not None:
             # necessary to ensure shuffling of the data
@@ -167,23 +167,14 @@ def train_and_validate(
             )
 
         if save_or_log:
-            if wandb_logging:
-                wandb.log(
-                    {
-                        "train_loss": train_loss,
-                        "val_loss": val_loss,
-                        "train_acc": train_acc,
-                        "val_acc": val_acc,
-                        "epoch": epoch,
-                    },
-                    step=epoch,
-                )
-
-            logging.info(
-                f"\nEpoch {epoch}: {perf_counter() - t0:.3f} [sec]\t"
-                f"Mean train/val loss: {train_loss:.4f}/{val_loss:.4f}\t"
-                f"Train/val acc: "
-                f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
+            log__after_epoch(
+                train_loss=train_loss,
+                val_loss=val_loss,
+                train_acc=train_acc,
+                val_acc=val_acc,
+                epoch=epoch,
+                start_time__epoch=start_time__epoch,
+                wandb_logging=wandb_logging,
             )
 
     if save_or_log:

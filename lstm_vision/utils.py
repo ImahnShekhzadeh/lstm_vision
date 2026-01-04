@@ -9,6 +9,7 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 import torch
+import wandb
 from omegaconf import DictConfig
 from prettytable import PrettyTable
 from torch import Tensor
@@ -28,6 +29,49 @@ from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from LSTM_model import LSTM
+
+
+@typechecked
+def log__after_epoch(
+    train_loss: float,
+    val_loss: float,
+    train_acc: float,
+    val_acc: float,
+    epoch: int,
+    start_time__epoch: float,
+    wandb_logging: bool = False,
+) -> None:
+    """
+    Log epoch stats.
+
+    Args:
+        train_loss: Training loss.
+        val_loss: Validation loss.
+        train_acc: Training accuracy.
+        val_acc: Validation accuracy.
+        epoch: Epoch (starts with `0`).
+        start_time__epoch: Start time of epoch training.
+        wandb_logging: Whether logging to Weights & Biases occurs.
+    """
+
+    if wandb_logging:
+        wandb.log(
+            {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "train_acc": train_acc,
+                "val_acc": val_acc,
+                "epoch": epoch,
+            },
+            step=epoch,
+        )
+
+    logging.info(
+        f"\nEpoch {epoch}: {perf_counter() - start_time__epoch:.3f} [sec]\t"
+        f"Mean train/val loss: {train_loss:.4f}/{val_loss:.4f}\t"
+        f"Train/val acc: "
+        f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
+    )
 
 
 @typechecked
