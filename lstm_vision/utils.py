@@ -1,5 +1,6 @@
 import gc
 import logging
+import math
 import os
 import random
 import subprocess
@@ -24,8 +25,84 @@ from torch.utils.data.sampler import Sampler
 from torchvision.datasets import MNIST
 from torchvision.transforms import v2
 from typeguard import typechecked
+from zeus.monitor import ZeusMonitor
 
 from LSTM_model import LSTM
+
+
+@typechecked
+def save_cp_log__after_training(
+    rank: int | torch.device,
+    monitor: ZeusMonitor,
+    train_loader: DataLoader,
+    num_epochs: int,
+    world_size: int,
+    start_time: float,
+    checkpoint_best: Dict,
+    saving_path: str,
+    saving_name_best_cp: str,
+) -> None:
+    """
+    Save checkpoint corresponding to best model and log stats after training.
+
+    Args:
+        rank: Device on which the code is executed.
+        monitor: Monitor, e.g. for usage of GPU memory.
+        train_loader: Dataloader for the training set.
+        num_epochs: Number of epochs the model was trained for.
+        world_size: Number of processes participating in distributed training.
+            If `world_size` is 1, no distributed training is used.
+        start_time: Start time (to get duration of training and validation).
+        checkpoint_best: Dictionary with model and optimizer state dicts
+            (amongst others) for the best performance.
+        saving_path: Directory path to save the checkpoints.
+        saving_name_best_cp: Saving name of the best checkpoint.
+    """
+
+    if rank != torch.device("cpu"):
+        measurement = monitor.end_window("training")
+
+    num_iters = (
+        math.ceil(
+            len(train_loader.dataset) / (train_loader.batch_size * world_size)
+        )
+        * num_epochs
+    )  # total number of training iters
+
+    log_training_stats(
+        start_time=start_time,
+        energy_consump=measurement.total_energy,
+        device=rank,
+        local_msg=(f"Training {num_epochs} epochs ({num_iters} iterations)"),
+    )
+    save_checkpoint(
+        state=checkpoint_best,
+        filename=os.path.join(
+            saving_path,
+            saving_name_best_cp,
+        ),
+    )
+
+
+@typechecked
+def get__save_or_log(rank: int | torch.device) -> bool:
+    """
+    Whether saving of checkpoints or logging (also to Weights & Biases if key was
+    provided) will take place.
+
+    Args:
+        rank: Device on which the code is executed.
+
+    Returns:
+        Boolean indicating whether
+    """
+
+    return rank in [
+        0,
+        torch.device("cuda:0"),
+        torch.device("cuda"),
+        torch.device("cpu"),
+    ]
 
 
 @typechecked

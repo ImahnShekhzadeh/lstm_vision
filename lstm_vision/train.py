@@ -1,9 +1,8 @@
 import logging
-import math
 import os
 from copy import deepcopy
 from time import perf_counter
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import torch
 import wandb
@@ -16,9 +15,10 @@ from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from utils import (
-    log_training_stats,
+    get__save_or_log,
     print__batch_info,
     save_checkpoint,
+    save_cp_log__after_training,
     start_timer,
 )
 
@@ -84,19 +84,13 @@ def train_and_validate(
 
     start_time = start_timer(device=rank)
     min_val_loss = float("inf")
+    save_or_log = get__save_or_log(rank=rank)
 
     # AMP (automatic mixed precision)
     if rank == 0:
         scaler = GradScaler("cuda", enabled=use_amp)
     else:
         scaler = GradScaler("cpu", enabled=use_amp)
-
-    save_or_log = rank in [
-        0,
-        torch.device(str__cuda_0),
-        torch.device("cuda"),
-        torch.device("cpu"),
-    ]
 
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
@@ -193,31 +187,16 @@ def train_and_validate(
             )
 
     if save_or_log:
-        if rank != torch.device("cpu"):
-            measurement = monitor.end_window("training")
-
-        num_iters = (
-            math.ceil(
-                len(train_loader.dataset)
-                / (train_loader.batch_size * world_size)
-            )
-            * num_epochs
-        )  # total number of training iters
-
-        log_training_stats(
+        save_cp_log__after_training(
+            rank=rank,
+            monitor=monitor,
+            train_loader=train_loader,
+            num_epochs=num_epochs,
+            world_size=world_size,
             start_time=start_time,
-            energy_consump=measurement.total_energy,
-            device=rank,
-            local_msg=(
-                f"Training {num_epochs} epochs ({num_iters} iterations)"
-            ),
-        )
-        save_checkpoint(
-            state=checkpoint_best,
-            filename=os.path.join(
-                saving_path,
-                saving_name_best_cp,
-            ),
+            checkpoint_best=checkpoint_best,
+            saving_path=saving_path,
+            saving_name_best_cp=saving_name_best_cp,
         )
 
 
