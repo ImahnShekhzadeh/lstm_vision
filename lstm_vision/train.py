@@ -1,7 +1,5 @@
-import logging
 import os
 from copy import deepcopy
-from time import perf_counter
 from typing import Optional, Tuple
 
 import torch
