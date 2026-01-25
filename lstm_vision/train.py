@@ -106,7 +106,6 @@ def train_and_validate(
             num_grad_accum_steps=num_grad_accum_steps,
             scaler=scaler,
             rank=rank,
-            use_amp=use_amp,
             epoch=epoch,
             max_norm=max_norm,
             freq_output__train=freq_output__train,
@@ -192,7 +191,6 @@ def train_one_epoch(
     num_grad_accum_steps: int,
     scaler: torch.amp.GradScaler,
     rank: int | torch.device,
-    use_amp: bool,
     epoch: int,
     max_norm: Optional[float] = None,
     freq_output__train: Optional[int] = 10,
@@ -208,7 +206,6 @@ def train_one_epoch(
         num_grad_accum_steps: Number of gradient accumulation steps.
         scaler: GradScaler for automatic mixed precision.
         rank: Device on which the code is executed.
-        use_amp: Whether to use automatic mixed precision.
         epoch: Current epoch index.
         max_norm: Maximum norm of the gradients.
         freq_output__train: Frequency at which to print the training info.
@@ -227,9 +224,7 @@ def train_one_epoch(
         with autocast(
             device_type=labels.device.type,
             dtype=torch.float16,
-            # TODO: Perhaps `use_amp` can be replaced by using
-            # `scaler._enabled`?
-            enabled=use_amp,
+            enabled=scaler._enabled,
         ):
             output = model(images.squeeze_(dim=1).to(rank))  # `(N, 10)`
             loss = loss_fn(output, labels) / num_grad_accum_steps
