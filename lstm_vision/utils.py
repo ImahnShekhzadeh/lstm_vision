@@ -714,7 +714,7 @@ def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
 
 
 @typechecked
-def count_parameters(model: nn.Module) -> None:
+def log_param_table(model: nn.Module) -> None:
     """Print the number of parameters per module.
 
     Args:

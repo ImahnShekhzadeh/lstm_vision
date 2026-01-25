@@ -16,7 +16,7 @@ from train import str__cuda_0, train_and_validate
 from utils import (
     check_config_keys,
     cleanup,
-    count_parameters,
+    log_param_table,
     get_datasets,
     get_git_info,
     get_model,
@@ -124,7 +124,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n\n"
             f"{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
         )
-        count_parameters(model)  # TODO: rename to `log_param_table`
+        log_param_table(model)
     else:
         wandb_logging = False
 
