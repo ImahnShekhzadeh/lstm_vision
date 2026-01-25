@@ -215,7 +215,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             device=rank,
             use_ddp=False,
         )
-        # TODO: split the following and put into func `check_accuracy`, rename 
+        # TODO: split the following and put into func `check_accuracy`, rename
         # `check_accuracy` into `check_log_accuracy`.
         logging.info(
             f"\nTrain data: Got {train__num_correct}/{train__num_samples} with"

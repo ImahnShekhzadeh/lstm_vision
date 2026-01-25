@@ -227,7 +227,7 @@ def train_one_epoch(
         with autocast(
             device_type=labels.device.type,
             dtype=torch.float16,
-            # TODO: Perhaps `use_amp` can be replaced by using 
+            # TODO: Perhaps `use_amp` can be replaced by using
             # `scaler._enabled`?
             enabled=use_amp,
         ):
