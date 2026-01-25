@@ -124,7 +124,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n\n"
             f"{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
         )
-        count_parameters(model)  # TODO: rename, misleadig name
+        count_parameters(model)  # TODO: rename to `log_param_table`
     else:
         wandb_logging = False
 
@@ -205,6 +205,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     if cfg.training.use_ddp:
         cleanup()  # destroy process group, clean exit
 
+    # TODO: refactor following code into func `evaluate_test_set()`
     if rank in [0, torch.device("cpu")]:
         test__num_correct, test__num_samples = check_accuracy(
             test_loader,
@@ -214,6 +215,8 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             device=rank,
             use_ddp=False,
         )
+        # TODO: split the following and put into func `check_accuracy`, rename 
+        # `check_accuracy` into `check_log_accuracy`.
         logging.info(
             f"\nTrain data: Got {train__num_correct}/{train__num_samples} with"
             f" accuracy {(100 * train__num_correct / train__num_samples):.2f} "
@@ -234,7 +237,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             wandb.finish()
 
 
-@hydra.main(version_base=None, config_path="/app/configs", config_name="conf")
+@hydra.main(version_base=None, config_path="../configs", config_name="conf")
 @typechecked
 def main(cfg: DictConfig) -> None:
     """

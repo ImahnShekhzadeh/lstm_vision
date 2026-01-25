@@ -27,3 +27,6 @@ uv.lock
 
 # Sonar
 .sonar
+
+# VS Code
+.vscode

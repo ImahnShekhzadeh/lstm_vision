@@ -43,6 +43,16 @@ training.wandb__api_key=<your_key>
 # training.wandb__api_key=2fru...
 ```
 
+### uv
+You can also run the code by using `uv`. For this, create a virtual env first:
+```
+uv venv lstm_vision:code --python 3.11
+```
+Then activate the environment (follow the on-screen hint). Now install all required modules by running
+```
+uv pip install -r pyproject.toml
+```
+
 ## `isort` \& `black`
 To `isort` and `black` format the Python scripts, run
 ```Docker
