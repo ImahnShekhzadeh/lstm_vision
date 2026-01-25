@@ -12,16 +12,16 @@ from torchinfo import summary
 from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
-from train import str__cuda_0, train_and_validate
+from train import TrainingConfig, str__cuda_0, train_and_validate
 from utils import (
     check_config_keys,
     cleanup,
-    log_param_table,
     get_datasets,
     get_git_info,
     get_model,
     get_samplers_loaders,
     load_checkpoint,
+    log_param_table,
     setup,
 )
 
@@ -154,24 +154,29 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         )
 
     if cfg.training.num_epochs > 0:
-        train_and_validate(
-            model=model,
-            optimizer=optimizer,
+        training_config = TrainingConfig(
             num_epochs=cfg.training.num_epochs,
             num_grad_accum_steps=cfg.training.num_grad_accum_steps,
-            rank=rank,
             world_size=world_size,
             use_amp=cfg.training.use_amp,
-            train_loader=train_loader,
-            val_loader=val_loader,
+            max_norm=cfg.training.max_norm,
+            label_smoothing=cfg.training.label_smoothing,
             num_additional_cps=cfg.training.num_additional_cps,
             saving_path=output_dir,
             saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
-            label_smoothing=cfg.training.label_smoothing,
             freq_output__train=cfg.training.freq_output__train,
             freq_output__val=cfg.training.freq_output__val,
-            max_norm=cfg.training.max_norm,
             wandb_logging=wandb_logging,
+        )
+
+        train_and_validate(
+            model=model,
+            optimizer=optimizer,
+            rank=rank,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            cfg=training_config,
+            train_sampler=train_sampler,
         )
 
         # Load checkpoint with lowest validation loss for final evaluation.

@@ -1,5 +1,6 @@
 import os
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import torch
@@ -23,26 +24,43 @@ from utils import (
 str__cuda_0 = "cuda:0"
 
 
+@dataclass
+class TrainingConfig:
+    """Configuration for the training and validation process."""
+
+    # Training loop params
+    num_epochs: int  # number of epochs to train model
+    num_grad_accum_steps: int  # number of gradient accumulation steps
+    world_size: int  # number of processes participating in distributed training
+    use_amp: bool  # whether automatic mixed precision is used
+    max_norm: Optional[float] = None  # maximum norm of gradients
+    label_smoothing: float = (
+        0.0  # amount of smoothing applied when calculating loss
+    )
+
+    # Checkpoint and saving params
+    num_additional_cps: int = 0
+    # number of additional checkpoints (besides the one for lowest val loss)
+    saving_path: Optional[str] = None  # directory path for checkpoints
+    saving_name_best_cp: Optional[str] = None  # saving name of best checkpoint
+
+    # Logging and monitoring params
+    freq_output__train: Optional[
+        int
+    ] = 10  # freq at which training info is printed
+    freq_output__val: Optional[int] = 10  # freq at which val info is printed
+    wandb_logging: bool = False  # whether logging to Weights & Biases occurs
+
+
 @typechecked
 def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
-    num_epochs: int,
-    num_grad_accum_steps: int,
     rank: int | torch.device,
-    world_size: int,
-    use_amp: bool,
     train_loader: DataLoader,
     val_loader: DataLoader,
+    cfg: TrainingConfig,
     train_sampler: Optional[Sampler] = None,
-    num_additional_cps: int = 0,
-    saving_path: Optional[str] = None,
-    saving_name_best_cp: Optional[str] = None,
-    label_smoothing: float = 0.0,
-    freq_output__train: Optional[int] = 10,
-    freq_output__val: Optional[int] = 10,
-    max_norm: Optional[float] = None,
-    wandb_logging: bool = False,
 ) -> None:
     """
     Train and validate the model. The code will always save a checkpoint
@@ -51,46 +69,35 @@ def train_and_validate(
     Args:
         model: Model to train.
         optimizer: Optimizer to use.
-        num_epochs: Number of epochs to train the model.
-        num_grad_accum_steps: Number of gradient accumulation steps.
         rank: Device on which the code is executed.
-        use_amp: Whether to use automatic mixed precision.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
+        cfg: Training configuration containing all training, checkpoint/saving and
+            logging parameters.
         train_sampler: Sampler for the training set.
-        num_additional_cps: Number of checkpoints to save (one is always saved
-            at the lowest validation loss)
-        saving_path: Directory path to save the checkpoints.
-        saving_name_best_cp: Saving name of the best checkpoint.
-        label_smoothing: Amount of smoothing to be applied when calculating
-            loss.
-        freq_output__train: Frequency at which to print the training info.
-        freq_output__val: Frequency at which to print the validation info.
-        max_norm: Maximum norm of the gradients.
-        wandb_logging: Whether logging to Weights & Biases occurs.
     """
 
-    if num_additional_cps >= 1:
+    if cfg.num_additional_cps >= 1:
         assert (
-            saving_path is not None
+            cfg.saving_path is not None
         ), "Please provide a valid saving path for the additional checkpoints"
-        os.makedirs(saving_path, exist_ok=True)
+        os.makedirs(cfg.saving_path, exist_ok=True)
 
     loss_fn = nn.CrossEntropyLoss(
-        reduction="sum", label_smoothing=label_smoothing
+        reduction="sum", label_smoothing=cfg.label_smoothing
     )
-    scaler = get__gradient_scaler(rank=rank, use_amp=use_amp)
+    scaler = get__gradient_scaler(rank=rank, use_amp=cfg.use_amp)
     min_val_loss = float("inf")
     save_or_log = get__save_or_log(rank=rank)
 
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
     if save_or_log and rank != torch.device("cpu"):
-        monitor = ZeusMonitor(gpu_indices=list(range(world_size)))
+        monitor = ZeusMonitor(gpu_indices=list(range(cfg.world_size)))
         monitor.begin_window("training")
 
     start_time = start_timer(device=rank)
-    for epoch in range(num_epochs):
+    for epoch in range(cfg.num_epochs):
         start_time__epoch = start_timer(device=rank)
 
         if train_sampler is not None:
@@ -103,27 +110,27 @@ def train_and_validate(
             model=model,
             optimizer=optimizer,
             loss_fn=loss_fn,
-            num_grad_accum_steps=num_grad_accum_steps,
+            num_grad_accum_steps=cfg.num_grad_accum_steps,
             scaler=scaler,
             rank=rank,
             epoch=epoch,
-            max_norm=max_norm,
-            freq_output__train=freq_output__train,
+            max_norm=cfg.max_norm,
+            freq_output__train=cfg.freq_output__train,
         )
         # mean loss per sample over all GPUs; we could alternatively use
         # `torch.distributed.reduce()` to sum the losses over all GPUs
-        train_loss *= world_size / len(train_loader.dataset)
+        train_loss *= cfg.world_size / len(train_loader.dataset)
 
         val_loss, val_acc = validate_one_epoch(
             model=model,
             val_loader=val_loader,
             loss_fn=loss_fn,
             rank=rank,
-            use_amp=use_amp,
+            use_amp=cfg.use_amp,
             epoch=epoch,
-            freq_output__val=freq_output__val,
+            freq_output__val=cfg.freq_output__val,
         )
-        val_loss *= world_size / len(val_loader.dataset)
+        val_loss *= cfg.world_size / len(val_loader.dataset)
 
         if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
@@ -136,8 +143,8 @@ def train_and_validate(
             }
 
         if (
-            (num_additional_cps >= 1)
-            and ((epoch + 1) % (num_epochs // num_additional_cps) == 0)
+            (cfg.num_additional_cps >= 1)
+            and ((epoch + 1) % (cfg.num_epochs // cfg.num_additional_cps) == 0)
             and save_or_log
         ):
             checkpoint = {
@@ -152,7 +159,7 @@ def train_and_validate(
             save_checkpoint(
                 state=checkpoint,
                 filename=os.path.join(
-                    saving_path,
+                    cfg.saving_path,
                     saving_name,
                 ),
             )
@@ -165,7 +172,7 @@ def train_and_validate(
                 val_acc=val_acc,
                 epoch=epoch,
                 start_time__epoch=start_time__epoch,
-                wandb_logging=wandb_logging,
+                wandb_logging=cfg.wandb_logging,
             )
 
     if save_or_log:
@@ -173,12 +180,12 @@ def train_and_validate(
             rank=rank,
             monitor=monitor,
             train_loader=train_loader,
-            num_epochs=num_epochs,
-            world_size=world_size,
+            num_epochs=cfg.num_epochs,
+            world_size=cfg.world_size,
             start_time=start_time,
             checkpoint_best=checkpoint_best,
-            saving_path=saving_path,
-            saving_name_best_cp=saving_name_best_cp,
+            saving_path=cfg.saving_path,
+            saving_name_best_cp=cfg.saving_name_best_cp,
         )
 
 
