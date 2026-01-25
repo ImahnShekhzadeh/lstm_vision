@@ -1,7 +1,11 @@
 FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Berlin
+
 RUN apt-get update \
-    && apt-get install -y curl ca-certificates git \
+    && apt-get install -y curl ca-certificates git tzdata \
+    && ln -fs /usr/share/zoneinfo/$TZ /etc/localtime \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
