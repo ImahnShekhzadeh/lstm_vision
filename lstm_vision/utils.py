@@ -33,6 +33,33 @@ from LSTM_model import LSTM
 
 
 @typechecked
+def setup_ddp_if_needed(rank: int, world_size: int, cfg: DictConfig) -> None:
+    """
+    Handle DDP setup.
+
+    Args:
+        rank: Device on which the code is executed.
+        world_size: Number of processes participating in distributed training.
+            If `world_size` is 1, no distributed training is used.
+    """
+
+    if cfg.training.use_ddp:
+        # When using a single GPU per process and per
+        # DistributedDataParallel, we need to divide the batch size
+        # ourselves based on the total number of GPUs of the current node.
+        cfg.training.batch_size = int(cfg.training.batch_size / world_size)
+
+        os.environ["MASTER_ADDR"] = cfg.training.master_addr
+        os.environ["MASTER_PORT"] = cfg.training.master_port
+
+        dist.init_process_group(
+            backend="nccl",
+            rank=rank,
+            world_size=world_size,
+        )
+
+
+@typechecked
 def get__gradient_scaler(
     rank: int | torch.device,
     use_amp: bool,
@@ -199,35 +226,6 @@ def cleanup() -> None:
     Cleanup the distributed environment.
     """
     dist.destroy_process_group()
-
-
-@typechecked
-def setup(
-    rank: int,
-    world_size: int,
-    master_addr: str = "localhost",
-    master_port: str = "12355",
-    backend: str = "nccl",
-) -> None:
-    """
-    Initialize the distributed environment.
-
-    Args:
-        rank: Rank of the current process.
-        world_size: Number of processes participating in the job.
-        master_addr: IP address of the master node.
-        master_port: Port number of the master node.
-        backend: Backend to use.
-    """
-
-    os.environ["MASTER_ADDR"] = master_addr
-    os.environ["MASTER_PORT"] = master_port
-
-    dist.init_process_group(
-        backend=backend,
-        rank=rank,
-        world_size=world_size,
-    )
 
 
 @typechecked

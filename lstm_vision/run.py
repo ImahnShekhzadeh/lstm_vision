@@ -22,7 +22,7 @@ from utils import (
     get_samplers_loaders,
     load_checkpoint,
     log_param_table,
-    setup,
+    setup_ddp_if_needed,
 )
 
 
@@ -45,18 +45,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         # set random seed, each process gets different seed
         torch.manual_seed(cfg.training.seed_number + rank)
 
-    if cfg.training.use_ddp:
-        # When using a single GPU per process and per
-        # DistributedDataParallel, we need to divide the batch size
-        # ourselves based on the total number of GPUs of the current node.
-        cfg.training.batch_size = int(cfg.training.batch_size / world_size)
-
-        setup(
-            rank=rank,
-            world_size=world_size,
-            master_addr=cfg.training.master_addr,
-            master_port=cfg.training.master_port,
-        )
+    setup_ddp_if_needed(rank, world_size, cfg)
 
     train_dataset, val_dataset, test_dataset = get_datasets(
         channels_img=cfg.dataset.channels_img,
