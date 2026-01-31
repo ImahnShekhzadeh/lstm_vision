@@ -51,7 +51,17 @@ def initialize_logging(
     Handle Wandb initialization and logging setup.
 
     Args:
-
+        rank: Device on which the code is executed.
+        cfg: Configuration dictionary from hydra containing keys and values.
+        model: Model for which we want to check whether gradient clipping is
+            necessary.
+        world_size: Number of processes participating in distributed training.
+            If `world_size` is 1, no distributed training is used.
+        train_samples: Number of training samples.
+        val_samples: Number of validation samples.
+        test_samples: Number of test samples.
+        seq_length: Sequence length.
+        inp_size: Input size.
 
     Returns:
         Whether wandb logging is enabled.
@@ -85,7 +95,7 @@ def initialize_logging(
             f"\n\n{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
         )
         log_param_table(model)
-    
+
     return wandb_logging
 
 
@@ -100,6 +110,7 @@ def setup_ddp_if_needed(
         rank: Device on which the code is executed.
         world_size: Number of processes participating in distributed training.
             If `world_size` is 1, no distributed training is used.
+        cfg: Configuration dictionary from hydra containing keys and values.
     """
 
     if cfg.training.use_ddp:
