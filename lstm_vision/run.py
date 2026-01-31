@@ -84,7 +84,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     )
 
     saving_name_best_cp = "lstm_best_cp.pt"
-
+    wandb_logging = False
     if rank in [0, torch.device("cpu")]:
         check_config_keys(cfg)
 
@@ -113,8 +113,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             f"{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
         )
         log_param_table(model)
-    else:
-        wandb_logging = False
 
     optimizer = optim.AdamW(
         params=model.parameters(),
