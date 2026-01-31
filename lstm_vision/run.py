@@ -42,7 +42,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
 
     if cfg.training.seed_number is not None:
-        # set random seed, each process gets different seed
         torch.manual_seed(cfg.training.seed_number + rank)
 
     setup_ddp_if_needed(rank, world_size, cfg)
