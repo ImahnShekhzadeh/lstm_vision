@@ -4,13 +4,14 @@ import math
 import os
 import random
 import subprocess
+from datetime import datetime as dt
 from time import perf_counter
 from typing import Dict, Optional, Tuple
 
 import numpy as np
 import torch
 import wandb
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from prettytable import PrettyTable
 from torch import Tensor
 from torch import distributed as dist
@@ -24,16 +25,74 @@ from torch.utils.data import (
     random_split,
 )
 from torch.utils.data.sampler import Sampler
+from torchinfo import summary
 from torchvision.datasets import MNIST
 from torchvision.transforms import v2
 from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from LSTM_model import LSTM
+from utils import check_config_keys, get_git_info, log_param_table
 
 
 @typechecked
-def setup_ddp_if_needed(rank: int, world_size: int, cfg: DictConfig) -> None:
+def initialize_logging(
+    rank: int | torch.device,
+    cfg: DictConfig,
+    model: nn.Module,
+    world_size: int,
+    train_samples: int,
+    val_samples: int,
+    test_samples: int,
+    seq_length: int,
+    inp_size: int,
+) -> bool:
+    """
+    Handle Wandb initialization and logging setup.
+
+    Args:
+
+
+    Returns:
+        Whether wandb logging is enabled.
+    """
+
+    wandb_logging = False
+    if rank in [0, torch.device("cpu")]:
+        check_config_keys(cfg)
+
+        wandb_logging = cfg.training.wandb__api_key is not None
+        if wandb_logging:
+            wandb.login(key=cfg.training.wandb__api_key)
+            wandb.init(
+                project="lstm_vision",
+                name=dt.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                config=OmegaConf.to_container(
+                    cfg, resolve=True, throw_on_missing=True
+                ),
+            )
+
+        if torch.cuda.is_available():
+            list_gpus = [
+                torch.cuda.get_device_name(i) for i in range(world_size)
+            ]
+            logging.info(f"\nGPU(s): {list_gpus}\n")
+
+        get_git_info()
+
+        logging.info(
+            f"# Train:val:test samples: {train_samples}:{val_samples}:{test_samples}"
+            f"\n\n{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
+        )
+        log_param_table(model)
+    
+    return wandb_logging
+
+
+@typechecked
+def setup_ddp_if_needed(
+    rank: int | torch.device, world_size: int, cfg: DictConfig
+) -> None:
     """
     Handle DDP setup.
 

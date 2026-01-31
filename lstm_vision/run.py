@@ -1,27 +1,23 @@
 import logging
 import os
-from datetime import datetime as dt
 
 import hydra
 import torch
 import wandb
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from torch import distributed as dist
 from torch import optim
-from torchinfo import summary
 from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
 from train import TrainingConfig, str__cuda_0, train_and_validate
 from utils import (
-    check_config_keys,
     cleanup,
     get_datasets,
-    get_git_info,
     get_model,
     get_samplers_loaders,
+    initialize_logging,
     load_checkpoint,
-    log_param_table,
     setup_ddp_if_needed,
 )
 
@@ -84,35 +80,17 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     )
 
     saving_name_best_cp = "lstm_best_cp.pt"
-    wandb_logging = False
-    if rank in [0, torch.device("cpu")]:
-        check_config_keys(cfg)
-
-        wandb_logging = cfg.training.wandb__api_key is not None
-        if wandb_logging:
-            wandb.login(key=cfg.training.wandb__api_key)
-            wandb.init(
-                project="lstm_vision",
-                name=dt.now().strftime("%dp%mp%Y_%Hp%Mp%S"),
-                config=OmegaConf.to_container(
-                    cfg, resolve=True, throw_on_missing=True
-                ),
-            )
-
-        if torch.cuda.is_available():
-            list_gpus = [
-                torch.cuda.get_device_name(i) for i in range(world_size)
-            ]
-            logging.info(f"\nGPU(s): {list_gpus}\n")
-
-        get_git_info()
-
-        logging.info(
-            f"# Train:val:test samples: {len(train_loader.dataset)}"
-            f":{len(val_loader.dataset)}:{len(test_loader.dataset)}\n\n"
-            f"{summary(model, (cfg.training.batch_size, seq_length, inp_size))}\n"
-        )
-        log_param_table(model)
+    wandb_logging = initialize_logging(
+        rank=rank,
+        cfg=cfg,
+        model=model,
+        world_size=world_size,
+        train_samples=len(train_loader.dataset),
+        val_samples=len(val_loader.dataset),
+        test_samples=len(test_loader.dataset),
+        seq_length=seq_length,
+        inp_size=inp_size,
+    )
 
     optimizer = optim.AdamW(
         params=model.parameters(),
