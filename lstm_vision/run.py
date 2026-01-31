@@ -6,7 +6,8 @@ import torch
 import wandb
 from omegaconf import DictConfig
 from torch import distributed as dist
-from torch import optim
+from torch import nn, optim
+from torch.utils.data import DataLoader
 from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
@@ -79,7 +80,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         use_ddp=cfg.training.use_ddp,
     )
 
-    saving_name_best_cp = "lstm_best_cp.pt"
     wandb_logging = initialize_logging(
         rank=rank,
         cfg=cfg,
@@ -118,48 +118,16 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         )
 
     if cfg.training.num_epochs > 0:
-        training_config = TrainingConfig(
-            num_epochs=cfg.training.num_epochs,
-            num_grad_accum_steps=cfg.training.num_grad_accum_steps,
+        exec__training_validation(
+            cfg=cfg,
+            rank=rank,
             world_size=world_size,
-            use_amp=cfg.training.use_amp,
-            max_norm=cfg.training.max_norm,
-            label_smoothing=cfg.training.label_smoothing,
-            num_additional_cps=cfg.training.num_additional_cps,
-            saving_path=output_dir,
-            saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
-            freq_output__train=cfg.training.freq_output__train,
-            freq_output__val=cfg.training.freq_output__val,
-            wandb_logging=wandb_logging,
-        )
-
-        train_and_validate(
             model=model,
             optimizer=optimizer,
-            rank=rank,
             train_loader=train_loader,
             val_loader=val_loader,
-            cfg=training_config,
-            train_sampler=train_sampler,
-        )
-
-        # Load checkpoint with lowest validation loss for final evaluation.
-        # It is necessary that all processes load the same checkpoint.
-        # Use a `barrier()` to make sure that process 1 loads the model after
-        # process 0 saves it
-        if cfg.training.use_ddp:
-            dist.barrier()
-        if rank == torch.device("cpu"):
-            map_location = {str__cuda_0: "cpu"}
-        else:
-            map_location = {str__cuda_0: f"cuda:{rank}"}
-        load_checkpoint(
-            model=model,
-            checkpoint=torch.load(
-                os.path.join(output_dir, saving_name_best_cp),
-                map_location=map_location,
-                weights_only=True,
-            ),
+            output_dir=output_dir,
+            wandb_logging=wandb_logging,
         )
 
     train__num_correct, train__num_samples = check_accuracy(
@@ -204,6 +172,80 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 
         if wandb_logging:
             wandb.finish()
+
+
+def exec__training_validation(
+    cfg: DictConfig,
+    model: nn.Module,
+    optimizer: nn.Module,
+    rank: int | torch.device,
+    world_size: int,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    output_dir: str,
+    wandb_logging: bool,
+) -> None:
+    """
+    Execute training and validation.
+
+    Args:
+        cfg: Configuration dictionary from hydra containing keys and values.
+        model: Neural network to be optimized.
+        optimizer: Optimizer.
+        rank: Device on which the code is executed.
+        world_size: Number of processes participating in distributed training.
+            If `world_size` is 1, no distributed training is used.
+        train_loader: Train loader.
+        val_loader: Validation loader.
+        output_dir: Output (saving) directory.
+        wandb_logging: Whether logging to Weights & Biases occurs.
+    """
+
+    saving_name_best_cp = "cp_best.pt"
+
+    training_config = TrainingConfig(
+        num_epochs=cfg.training.num_epochs,
+        num_grad_accum_steps=cfg.training.num_grad_accum_steps,
+        world_size=world_size,
+        use_amp=cfg.training.use_amp,
+        max_norm=cfg.training.max_norm,
+        label_smoothing=cfg.training.label_smoothing,
+        num_additional_cps=cfg.training.num_additional_cps,
+        saving_path=output_dir,
+        saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
+        freq_output__train=cfg.training.freq_output__train,
+        freq_output__val=cfg.training.freq_output__val,
+        wandb_logging=wandb_logging,
+    )
+
+    train_and_validate(
+        model=model,
+        optimizer=optimizer,
+        rank=rank,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        cfg=training_config,
+        train_sampler=train_sampler,
+    )
+
+    # Load checkpoint with lowest validation loss for final evaluation.
+    # It is necessary that all processes load the same checkpoint.
+    # Use a `barrier()` to make sure that process 1 loads the model after
+    # process 0 saves it
+    if cfg.training.use_ddp:
+        dist.barrier()
+    if rank == torch.device("cpu"):
+        map_location = {str__cuda_0: "cpu"}
+    else:
+        map_location = {str__cuda_0: f"cuda:{rank}"}
+    load_checkpoint(
+        model=model,
+        checkpoint=torch.load(
+            os.path.join(output_dir, saving_name_best_cp),
+            map_location=map_location,
+            weights_only=True,
+        ),
+    )
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="conf")
