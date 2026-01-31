@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import Optional
 
 import hydra
 import torch
@@ -8,6 +9,7 @@ from omegaconf import DictConfig
 from torch import distributed as dist
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import Sampler
 from typeguard import typechecked
 
 from evaluate import check_accuracy, get_confusion_matrix
@@ -120,12 +122,13 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     if cfg.training.num_epochs > 0:
         exec__training_validation(
             cfg=cfg,
-            rank=rank,
-            world_size=world_size,
             model=model,
             optimizer=optimizer,
+            rank=rank,
+            world_size=world_size,
             train_loader=train_loader,
             val_loader=val_loader,
+            train_sampler=train_sampler,
             output_dir=output_dir,
             wandb_logging=wandb_logging,
         )
@@ -152,13 +155,13 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             device=rank,
             use_ddp=False,
         )
-        # TODO: split the following and put into func `check_accuracy`, rename
-        # `check_accuracy` into `check_log_accuracy`.
         logging.info(
-            f"\nTrain data: Got {train__num_correct}/{train__num_samples} with"
-            f" accuracy {(100 * train__num_correct / train__num_samples):.2f} "
-            f"%\nTest data: Got {test__num_correct}/{test__num_samples} with "
-            f"accuracy {(100 * test__num_correct / test__num_samples):.2f} %"
+            f"\nTraining data: Got {train__num_correct}/{train__num_samples} ( "
+            f"accuracy = {(100 * train__num_correct / train__num_samples):.2f} %)"
+        )
+        logging.info(
+            f"\nTest data: Got {test__num_correct}/{test__num_samples} ( "
+            f"accuracy = {(100 * test__num_correct / test__num_samples):.2f} %)"
         )
 
         get_confusion_matrix(
@@ -184,6 +187,7 @@ def exec__training_validation(
     val_loader: DataLoader,
     output_dir: str,
     wandb_logging: bool,
+    train_sampler: Optional[Sampler] = None,
 ) -> None:
     """
     Execute training and validation.
