@@ -32,7 +32,6 @@ from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
 from LSTM_model import LSTM
-from utils import check_config_keys, get_git_info, log_param_table
 
 
 @typechecked
