@@ -133,6 +133,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             wandb_logging=wandb_logging,
         )
 
+    # TODO: refactor following code into func `exec_evaluation()`
     train__num_correct, train__num_samples = check_accuracy(
         train_loader,
         model,
@@ -145,7 +146,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     if cfg.training.use_ddp:
         cleanup()  # destroy process group, clean exit
 
-    # TODO: refactor following code into func `evaluate_test_set()`
     if rank in [0, torch.device("cpu")]:
         test__num_correct, test__num_samples = check_accuracy(
             test_loader,
@@ -203,6 +203,7 @@ def exec__training_validation(
         val_loader: Validation loader.
         output_dir: Output (saving) directory.
         wandb_logging: Whether logging to Weights & Biases occurs.
+        train_sampler: Sampler for the training set.
     """
 
     saving_name_best_cp = "cp_best.pt"
