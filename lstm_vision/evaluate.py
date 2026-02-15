@@ -13,27 +13,28 @@ from typeguard import typechecked
 @torch.no_grad()
 @typechecked
 def check_accuracy(
+    rank: int | torch.device,
     loader: DataLoader,
     model: nn.Module,
     use_amp: bool,
     mode: str,
     device: int | torch.device,
     use_ddp: bool = False,
-) -> Tuple[int, int]:
+) -> None:
     """
-    Check the accuracy of a given model on a given dataset.
+    Check and log the accuracy of the model on the dataset.
 
     Args:
+        rank: Rank of the current process. Can be `torch.device("cpu")` if no
+            GPU is available.
         loader: Dataloader of the dataset for which to check the accuracy.
         model: Model.
         use_amp: Whether to use automatic mixed precision.
         mode: Mode in which the model is in. Either "train" or "test".
         device: Device on which the code is executed.
         use_ddp: Whether distributed data parallel (DDP) is used.
-
-    Returns:
-        Number of correct and total predictions.
     """
+
     assert mode in ["train", "test"]
 
     model.eval()
@@ -73,7 +74,11 @@ def check_accuracy(
         num_correct = int(num_correct.item())
         num_samples = int(num_samples.item())
 
-    return num_correct, num_samples
+    if rank in [0, torch.device("cpu")]:
+        logging.info(
+            f"\n{mode.capitalize()} data: Got {num_correct}/{num_samples} ("
+            f"accuracy = {(100 * num_correct / num_samples):.2f} %)"
+        )
 
 
 @torch.no_grad()

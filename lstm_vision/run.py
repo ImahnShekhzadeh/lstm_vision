@@ -133,10 +133,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             wandb_logging=wandb_logging,
         )
 
-    # TODO: refactor following code into func `exec_evaluation()`
-    train__num_correct, train__num_samples = check_accuracy(
-        train_loader,
-        model,
+    check_accuracy(
+        rank=rank,
+        loader=train_loader,
+        model=model,
         use_amp=cfg.training.use_amp,
         mode="train",
         device=rank,
@@ -147,23 +147,15 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         cleanup()  # destroy process group, clean exit
 
     if rank in [0, torch.device("cpu")]:
-        test__num_correct, test__num_samples = check_accuracy(
-            test_loader,
-            model,
+        check_accuracy(
+            rank=rank,
+            loader=test_loader,
+            model=model,
             use_amp=cfg.training.use_amp,
             mode="test",
             device=rank,
             use_ddp=False,
         )
-        logging.info(
-            f"\nTraining data: Got {train__num_correct}/{train__num_samples} ( "
-            f"accuracy = {(100 * train__num_correct / train__num_samples):.2f} %)"
-        )
-        logging.info(
-            f"\nTest data: Got {test__num_correct}/{test__num_samples} ( "
-            f"accuracy = {(100 * test__num_correct / test__num_samples):.2f} %)"
-        )
-
         get_confusion_matrix(
             num_classes,
             test_loader,
