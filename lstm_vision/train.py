@@ -59,7 +59,7 @@ def train_and_validate(
     rank: int | torch.device,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    cfg: TrainingConfig,
+    training_config: TrainingConfig,
     train_sampler: Optional[Sampler] = None,
 ) -> None:
     """
@@ -72,32 +72,32 @@ def train_and_validate(
         rank: Device on which the code is executed.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
-        cfg: Training configuration containing all training, checkpoint/saving and
-            logging parameters.
+        training_config: Training configuration containing all training, 
+            checkpoint/saving and logging parameters.
         train_sampler: Sampler for the training set.
     """
 
-    if cfg.num_additional_cps >= 1:
+    if training_config.num_additional_cps >= 1:
         assert (
-            cfg.saving_path is not None
+            training_config.saving_path is not None
         ), "Please provide a valid saving path for the additional checkpoints"
-        os.makedirs(cfg.saving_path, exist_ok=True)
+        os.makedirs(training_config.saving_path, exist_ok=True)
 
     loss_fn = nn.CrossEntropyLoss(
-        reduction="sum", label_smoothing=cfg.label_smoothing
+        reduction="sum", label_smoothing=training_config.label_smoothing
     )
-    scaler = get__gradient_scaler(rank=rank, use_amp=cfg.use_amp)
+    scaler = get__gradient_scaler(rank=rank, use_amp=training_config.use_amp)
     min_val_loss = float("inf")
     save_or_log = get__save_or_log(rank=rank)
 
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
     if save_or_log and rank != torch.device("cpu"):
-        monitor = ZeusMonitor(gpu_indices=list(range(cfg.world_size)))
+        monitor = ZeusMonitor(gpu_indices=list(range(training_config.world_size)))
         monitor.begin_window("training")
 
     start_time = start_timer(device=rank)
-    for epoch in range(cfg.num_epochs):
+    for epoch in range(training_config.num_epochs):
         start_time__epoch = start_timer(device=rank)
 
         if train_sampler is not None:
@@ -110,27 +110,27 @@ def train_and_validate(
             model=model,
             optimizer=optimizer,
             loss_fn=loss_fn,
-            num_grad_accum_steps=cfg.num_grad_accum_steps,
+            num_grad_accum_steps=training_config.num_grad_accum_steps,
             scaler=scaler,
             rank=rank,
             epoch=epoch,
-            max_norm=cfg.max_norm,
-            freq_output__train=cfg.freq_output__train,
+            max_norm=training_config.max_norm,
+            freq_output__train=training_config.freq_output__train,
         )
         # mean loss per sample over all GPUs; we could alternatively use
         # `torch.distributed.reduce()` to sum the losses over all GPUs
-        train_loss *= cfg.world_size / len(train_loader.dataset)
+        train_loss *= training_config.world_size / len(train_loader.dataset)
 
         val_loss, val_acc = validate_one_epoch(
             model=model,
             val_loader=val_loader,
             loss_fn=loss_fn,
             rank=rank,
-            use_amp=cfg.use_amp,
+            use_amp=training_config.use_amp,
             epoch=epoch,
-            freq_output__val=cfg.freq_output__val,
+            freq_output__val=training_config.freq_output__val,
         )
-        val_loss *= cfg.world_size / len(val_loader.dataset)
+        val_loss *= training_config.world_size / len(val_loader.dataset)
 
         if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
@@ -143,8 +143,8 @@ def train_and_validate(
             }
 
         if (
-            (cfg.num_additional_cps >= 1)
-            and ((epoch + 1) % (cfg.num_epochs // cfg.num_additional_cps) == 0)
+            (training_config.num_additional_cps >= 1)
+            and ((epoch + 1) % (training_config.num_epochs // training_config.num_additional_cps) == 0)
             and save_or_log
         ):
             checkpoint = {
@@ -159,7 +159,7 @@ def train_and_validate(
             save_checkpoint(
                 state=checkpoint,
                 filename=os.path.join(
-                    cfg.saving_path,
+                    training_config.saving_path,
                     saving_name,
                 ),
             )
@@ -172,7 +172,7 @@ def train_and_validate(
                 val_acc=val_acc,
                 epoch=epoch,
                 start_time__epoch=start_time__epoch,
-                wandb_logging=cfg.wandb_logging,
+                wandb_logging=training_config.wandb_logging,
             )
 
     if save_or_log:
@@ -180,12 +180,12 @@ def train_and_validate(
             rank=rank,
             monitor=monitor,
             train_loader=train_loader,
-            num_epochs=cfg.num_epochs,
-            world_size=cfg.world_size,
+            num_epochs=training_config.num_epochs,
+            world_size=training_config.world_size,
             start_time=start_time,
             checkpoint_best=checkpoint_best,
-            saving_path=cfg.saving_path,
-            saving_name_best_cp=cfg.saving_name_best_cp,
+            saving_path=training_config.saving_path,
+            saving_name_best_cp=training_config.saving_name_best_cp,
         )
 
 

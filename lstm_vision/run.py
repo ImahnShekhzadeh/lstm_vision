@@ -219,7 +219,7 @@ def exec__training_validation(
         rank=rank,
         train_loader=train_loader,
         val_loader=val_loader,
-        cfg=training_config,
+        training_config=training_config,
         train_sampler=train_sampler,
     )
 
