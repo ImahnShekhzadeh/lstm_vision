@@ -99,6 +99,7 @@ def train_and_validate(
         monitor.begin_window("training")
 
     start_time = start_timer(device=rank)
+    model.train()
     for epoch in range(training_config.num_epochs):
         start_time__epoch = start_timer(device=rank)
 

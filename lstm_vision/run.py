@@ -80,6 +80,8 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         device=rank,
         use_ddp=cfg.training.use_ddp,
     )
+    if cfg.training.compilation_mode is not None:
+        model.compile(mode=cfg.training.compilation_mode)
     optimizer = optim.AdamW(
         params=model.parameters(),
         lr=cfg.optim.learning_rate,
@@ -87,7 +89,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         eps=cfg.optim.eps,
         weight_decay=cfg.optim.weight_decay,
     )
-    model.train()
 
     wandb_logging = initialize_logging(
         rank=rank,
