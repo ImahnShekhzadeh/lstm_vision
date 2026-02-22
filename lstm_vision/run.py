@@ -80,6 +80,14 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         device=rank,
         use_ddp=cfg.training.use_ddp,
     )
+    model.train()
+    optimizer = optim.AdamW(
+        params=model.parameters(),
+        lr=cfg.optim.learning_rate,
+        betas=(cfg.optim.beta_1, cfg.optim.beta_2),
+        eps=cfg.optim.eps,
+        weight_decay=cfg.optim.weight_decay,
+    )
 
     wandb_logging = initialize_logging(
         rank=rank,
@@ -92,15 +100,6 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         seq_length=seq_length,
         inp_size=inp_size,
     )
-
-    optimizer = optim.AdamW(
-        params=model.parameters(),
-        lr=cfg.optim.learning_rate,
-        betas=(cfg.optim.beta_1, cfg.optim.beta_2),
-        eps=cfg.optim.eps,
-        weight_decay=cfg.optim.weight_decay,
-    )
-    model.train()
 
     if cfg.model.loading_path is not None:
         if rank == torch.device("cpu"):

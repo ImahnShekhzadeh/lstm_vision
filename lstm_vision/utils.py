@@ -479,9 +479,7 @@ def get_sampler_loaders(
     pin_memory: bool,
     use_ddp: bool = False,
     seed_number: Optional[int] = None,
-) -> Tuple[
-    Optional[Sampler], DataLoader, DataLoader, DataLoader
-]:
+) -> Tuple[Optional[Sampler], DataLoader, DataLoader, DataLoader]:
     """
     Get the train sampler as well as train/val/test dataloaders.
 
