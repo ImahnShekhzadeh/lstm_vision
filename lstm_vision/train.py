@@ -72,7 +72,7 @@ def train_and_validate(
         rank: Device on which the code is executed.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
-        training_config: Training configuration containing all training, 
+        training_config: Training configuration containing all training,
             checkpoint/saving and logging parameters.
         train_sampler: Sampler for the training set.
     """
@@ -93,7 +93,9 @@ def train_and_validate(
     # measure energy consumption (rank 0 already measures energy consumption
     # of all GPUs)
     if save_or_log and rank != torch.device("cpu"):
-        monitor = ZeusMonitor(gpu_indices=list(range(training_config.world_size)))
+        monitor = ZeusMonitor(
+            gpu_indices=list(range(training_config.world_size))
+        )
         monitor.begin_window("training")
 
     start_time = start_timer(device=rank)
@@ -144,7 +146,14 @@ def train_and_validate(
 
         if (
             (training_config.num_additional_cps >= 1)
-            and ((epoch + 1) % (training_config.num_epochs // training_config.num_additional_cps) == 0)
+            and (
+                (epoch + 1)
+                % (
+                    training_config.num_epochs
+                    // training_config.num_additional_cps
+                )
+                == 0
+            )
             and save_or_log
         ):
             checkpoint = {
