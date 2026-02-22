@@ -18,7 +18,7 @@ from utils import (
     cleanup,
     get_datasets,
     get_model,
-    get_samplers_loaders,
+    get_sampler_loaders,
     initialize_logging,
     load_checkpoint,
     setup_ddp_if_needed,
@@ -51,11 +51,10 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     )
     (
         train_sampler,
-        val_sampler,
         train_loader,
         val_loader,
         test_loader,
-    ) = get_samplers_loaders(
+    ) = get_sampler_loaders(
         train_dataset=train_dataset,
         val_dataset=val_dataset,
         test_dataset=test_dataset,

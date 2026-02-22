@@ -470,7 +470,7 @@ def seed_worker(worker_id: int) -> None:
 
 
 @typechecked
-def get_samplers_loaders(
+def get_sampler_loaders(
     train_dataset: torch.utils.data.Dataset,
     val_dataset: torch.utils.data.Dataset,
     test_dataset: torch.utils.data.Dataset,
@@ -480,11 +480,10 @@ def get_samplers_loaders(
     use_ddp: bool = False,
     seed_number: Optional[int] = None,
 ) -> Tuple[
-    Optional[Sampler], Optional[Sampler], DataLoader, DataLoader, DataLoader
+    Optional[Sampler], DataLoader, DataLoader, DataLoader
 ]:
     """
-    Get the samplers for the train and validation as well as dataloaders for
-    the train, validation and test set.
+    Get the train sampler as well as train/val/test dataloaders.
 
     Args:
         train_dataset: Training set.
@@ -533,7 +532,7 @@ def get_samplers_loaders(
         **loader_kwargs,
     )
 
-    return train_sampler, val_sampler, train_loader, val_loader, test_loader
+    return train_sampler, train_loader, val_loader, test_loader
 
 
 @typechecked
