@@ -48,7 +48,7 @@ training.wandb__api_key=<your_key>
 # training.wandb__api_key=2fru...
 ```
 
-### uv
+## uv
 You can also run the code by using `uv`. For this, create a virtual env first:
 ```
 uv venv ~/.venv/lstm_vision --python 3.11
@@ -60,6 +60,12 @@ source ~/.venv/lstm_vision/bin/activate
 Now install all required modules by running
 ```
 uv pip install -r pyproject.toml
+```
+
+## Testing
+To test the source code first install the virtual environment, as described previously. Then run 
+```
+pytest
 ```
 
 ## `isort` \& `black`
