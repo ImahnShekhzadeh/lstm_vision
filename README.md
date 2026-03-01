@@ -51,9 +51,13 @@ training.wandb__api_key=<your_key>
 ### uv
 You can also run the code by using `uv`. For this, create a virtual env first:
 ```
-uv venv lstm_vision:code --python 3.11
+uv venv ~/.venv/lstm_vision --python 3.11
 ```
-Then activate the environment (follow the on-screen hint). Now install all required modules by running
+Then activate the environment via
+```
+source ~/.venv/lstm_vision/bin/activate
+``` 
+Now install all required modules by running
 ```
 uv pip install -r pyproject.toml
 ```

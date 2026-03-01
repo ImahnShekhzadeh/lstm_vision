@@ -1,0 +1,13 @@
+{
+    // For debugging `run.py`:
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "python": "${userHome}/.venv/lstm_vision/bin/python",
+        }
+    ]
+}

@@ -1,10 +1,13 @@
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "lstm-vision"
 version = "1.5.0"
 description = "LSTMs for computer vision (classification)"
-authors = [
-    {name = "Imahn Shekhzadeh", email = "imahn.shekhzadeh@unige.ch"},
-]
+authors = [{name = "Imahn Shekhzadeh"}]
 license = {text = "MIT license"}
 requires-python = ">=3.10"
 
@@ -24,6 +27,7 @@ dependencies = [
     "numpy==1.26.*",
     "torch==2.10.*",
     "torchvision==0.25.*",
+    "pytest==9.0.*",
 ]
 
 # https://docs.astral.sh/uv/guides/integration/pytorch/#installing-pytorch
