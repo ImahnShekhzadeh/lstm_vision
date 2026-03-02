@@ -1,0 +1,16 @@
+name: Run pytest
+
+on:
+  - fork
+  - pull_request
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11.11' 
+      - run: pytest
