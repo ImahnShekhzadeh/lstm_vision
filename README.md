@@ -44,15 +44,19 @@ model.loading_path=[...] training.num_epochs=0
 ### uv
 You can also run the code by using `uv`. For this, create a virtual env first:
 ```
-uv venv ~/.venv/lstm_vision --python 3.11
+uv venv ~/venv/lstm_vision --python 3.11
 ```
 Then activate the environment via
 ```
-source ~/.venv/lstm_vision/bin/activate
+source ~/venv/lstm_vision/bin/activate
 ``` 
 Now install all required modules by running
 ```
 uv pip install -r pyproject.toml
+```
+Now for single-GPU training, run
+```
+uv run --active lstm_vision/run.py
 ```
 
 ### W&B

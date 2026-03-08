@@ -7,7 +7,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "python": "${userHome}/.venv/lstm_vision/bin/python",
+            "python": "${userHome}/venv/lstm_vision/bin/python",
         }
     ]
 }
