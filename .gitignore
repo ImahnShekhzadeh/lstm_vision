@@ -9,9 +9,6 @@ MNIST
 # PyCache
 __pycache__
 
-# Test Jupyter NB
-test_sth.ipynb
-
 # log files
 *.log
 
@@ -27,3 +24,6 @@ uv.lock
 
 # Sonar
 .sonar
+
+# PyTest
+.pytest_cache
