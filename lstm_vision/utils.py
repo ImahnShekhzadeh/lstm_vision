@@ -31,7 +31,7 @@ from torchvision.transforms import v2
 from typeguard import typechecked
 from zeus.monitor import ZeusMonitor
 
-from LSTM_model import LSTM
+from model import LSTM
 
 
 @typechecked

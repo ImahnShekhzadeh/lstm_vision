@@ -23,6 +23,8 @@ class LSTM(nn.Module):
         dropout_rate: float,
     ) -> None:
         """
+        Initialize.
+
         Args:
             input_size: input is assumed to be in shape `(N, 1, H, W)`,
                 where `W` is the input size

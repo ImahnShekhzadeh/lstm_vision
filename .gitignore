@@ -27,3 +27,6 @@ uv.lock
 
 # PyTest
 .pytest_cache
+
+# Miscellaneous
+*.egg-info
