@@ -1,7 +1,7 @@
 import torch
 from typeguard import typechecked
 
-from lstm_vision.LSTM_model import LSTM
+from lstm_vision.model import LSTM
 
 
 @typechecked
