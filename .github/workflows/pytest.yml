@@ -9,11 +9,11 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.11.11' 
+      - uses: actions/checkout@v6 
       - name: Install latest version of uv
         uses: astral-sh/setup-uv@v7
+        with:
+          activate-environment: "true"
+          python-version: "3.11.11"
       - run: uv pip install -r pyproject.toml
       - run: pytest
