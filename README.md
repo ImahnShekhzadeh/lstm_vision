@@ -90,4 +90,4 @@ Test data: Got 9906/10000 with accuracy 99.06 %
 ```
 On a machine with an NVIDIA RTX 4090 with an Intel i5-10400, training for `50` epochs takes about `232` s, and in total about `12.61` GB of GPU memory are required. Note that without the `--use_amp` flag, which is specified in `configs/conf.yaml`, about double the memory will be required. If you have a GPU with less than already `12.61` GB VRAM, decrease the batch size.
 
-The above results were obtained with $10 \%$ label smoothing. I varied the label smoothing between $0 \%$ and $10 \%$ in steps of $2 \%$ and noticed that the greater the label smoothing, the higher the train and validation losses per epoch.
+The above results were obtained with $10$ % label smoothing. I varied the label smoothing between $0$ % to $10$ % in steps of $2$ % and noticed that the greater the label smoothing, the higher the train and validation losses per epoch.
