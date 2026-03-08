@@ -69,7 +69,8 @@ training.wandb__api_key=<your_key>
 ### `isort` \& `black`
 To `isort` and `black` format the Python scripts, run from the root
 ```Docker
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.5.0 /bin/bash -c "uv run isort /app/lstm_vision/. && uv run black /app/lstm_vision/." 
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.5.0 /bin/bash -c "uv run isort /app/lstm_vision/. && uv run black
+ /app/lstm_vision/. && uv run isort /app/tests/. && uv run black /app/tests/." 
 ```
 
 ## Testing
