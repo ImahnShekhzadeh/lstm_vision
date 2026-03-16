@@ -12,6 +12,7 @@ Use the following command to build the Docker image from the root of the directo
 ```
 docker build -f Dockerfile -t lstm-vision:1.6.0 .
 ```
+The Docker image consumes $8.31$ GB of disk space.
 
 #### Single-GPU
 On a single-GPU machine, I ran the script `run.py` as follows:
