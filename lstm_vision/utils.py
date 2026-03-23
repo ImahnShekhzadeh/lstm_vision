@@ -628,32 +628,6 @@ def log_training_stats(
 
 
 @typechecked
-def format_line(
-    mode: str,
-    epoch: int,
-    current_samples: int,
-    total_samples: int,
-    percentage: float,
-    loss: Tensor,
-) -> str:
-    assert mode.lower() in ["train", "val"]
-
-    max_epoch_width = len(f"{mode.capitalize()} epoch: {epoch}")
-    max_sample_info_width = len(f"[{total_samples} / {total_samples} (100 %)]")
-
-    epoch_str = f"{mode.capitalize()} epoch: {epoch}".ljust(max_epoch_width)
-    padded__current_sample = str(current_samples).zfill(
-        len(str(total_samples))
-    )
-    sample_info_str = f"[{padded__current_sample} / {total_samples} ({percentage:06.2f} %)]".ljust(
-        max_sample_info_width
-    )
-    loss_str = f"Loss: {loss:.4f}"
-
-    return f"{epoch_str}  {sample_info_str}  {loss_str}"
-
-
-@typechecked
 def print__batch_info(
     mode: str,
     batch_idx: int,
@@ -689,17 +663,12 @@ def print__batch_info(
             if isinstance(loader.dataset, IterableDataset)
             else len(loader.dataset)
         )
-        prog_perc = 100 * current_samples / total_samples
 
-        formatted_line = format_line(
-            mode=mode,
-            epoch=epoch,
-            current_samples=current_samples,
-            total_samples=total_samples,
-            percentage=prog_perc,
-            loss=loss,
-        )
-        logging.info(f"{formatted_line}")
+        epoch_str = f"{mode.capitalize()} epoch: {epoch}"
+        sample_info_str = f"[{current_samples} / {total_samples}]"
+        loss_str = f"Loss: {loss:.4f}"
+
+        logging.info(f"{epoch_str}\t{sample_info_str}\t{loss_str}")
 
 
 @typechecked
