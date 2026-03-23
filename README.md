@@ -50,7 +50,7 @@ uv venv ~/venv/lstm_vision --python 3.11
 Then activate the environment via
 ```
 source ~/venv/lstm_vision/bin/activate
-``` 
+```
 Now install all required modules by running
 ```
 uv pip install -r pyproject.toml
@@ -74,7 +74,7 @@ docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.6.0 
 ```
 
 ## Testing
-To test the source code first install the virtual environment, as described previously. Then run 
+To test the source code first install the virtual environment, as described previously. Then run
 ```
 pytest
 ```
