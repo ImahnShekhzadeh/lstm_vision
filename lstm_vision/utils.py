@@ -634,41 +634,38 @@ def print__batch_info(
     loader: DataLoader,
     epoch: int,
     loss: Tensor,
-    frequency: Optional[int] = 1,
 ) -> None:
     """
     Print the current batch information.
 
-    Params:
+    Args:
         mode: Mode in which the model is in. Either "train" or "val".
         batch_idx: Batch index.
         loader: Train or validation Dataloader.
         epoch: Current epoch.
         loss: Loss of the current batch.
-        frequency: Frequency at which to print the batch info.
     """
     assert mode.lower() in ["train", "val"]
 
-    if frequency is not None and batch_idx % frequency == 0:
-        current_samples = (batch_idx + 1) * loader.batch_size
-        if (
-            not isinstance(loader.dataset, IterableDataset)
-            and batch_idx == len(loader) - 1
-        ):
-            current_samples = len(loader.dataset)
+    current_samples = (batch_idx + 1) * loader.batch_size
+    if (
+        not isinstance(loader.dataset, IterableDataset)
+        and batch_idx == len(loader) - 1
+    ):
+        current_samples = len(loader.dataset)
 
-        # https://stackoverflow.com/questions/5384570/how-can-i-count-the-number-of-items-in-an-arbitrary-iterable-such-as-a-generato
-        total_samples = (
-            sum(1 for _ in loader.dataset)
-            if isinstance(loader.dataset, IterableDataset)
-            else len(loader.dataset)
-        )
+    # https://stackoverflow.com/questions/5384570/how-can-i-count-the-number-of-items-in-an-arbitrary-iterable-such-as-a-generato
+    total_samples = (
+        sum(1 for _ in loader.dataset)
+        if isinstance(loader.dataset, IterableDataset)
+        else len(loader.dataset)
+    )
 
-        epoch_str = f"{mode.capitalize()} epoch: {epoch}"
-        sample_info_str = f"[{current_samples} / {total_samples}]"
-        loss_str = f"Loss: {loss:.4f}"
+    epoch_str = f"{mode.capitalize()} epoch: {epoch}"
+    sample_info_str = f"{current_samples}/{total_samples}"
+    loss_str = f"Loss: {loss:.4f}"
 
-        logging.info(f"{epoch_str}\t{sample_info_str}\t{loss_str}")
+    logging.info(f"{epoch_str}\t{sample_info_str}\t{loss_str}")
 
 
 @typechecked

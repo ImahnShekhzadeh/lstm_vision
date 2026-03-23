@@ -209,8 +209,6 @@ def exec__training_validation(
         num_additional_cps=cfg.training.num_additional_cps,
         saving_path=output_dir,
         saving_name_best_cp=None if rank > 0 else saving_name_best_cp,
-        freq_output__train=cfg.training.freq_output__train,
-        freq_output__val=cfg.training.freq_output__val,
         wandb_logging=wandb_logging,
     )
 

@@ -44,11 +44,7 @@ class TrainingConfig:
     saving_path: Optional[str] = None  # directory path for checkpoints
     saving_name_best_cp: Optional[str] = None  # saving name of best checkpoint
 
-    # Logging and monitoring params
-    freq_output__train: Optional[
-        int
-    ] = 10  # freq at which training info is printed
-    freq_output__val: Optional[int] = 10  # freq at which val info is printed
+    # Wandb
     wandb_logging: bool = False  # whether logging to Weights & Biases occurs
 
 
@@ -118,7 +114,6 @@ def train_and_validate(
             rank=rank,
             epoch=epoch,
             max_norm=training_config.max_norm,
-            freq_output__train=training_config.freq_output__train,
         )
         # mean loss per sample over all GPUs; we could alternatively use
         # `torch.distributed.reduce()` to sum the losses over all GPUs
@@ -131,7 +126,6 @@ def train_and_validate(
             rank=rank,
             use_amp=training_config.use_amp,
             epoch=epoch,
-            freq_output__val=training_config.freq_output__val,
         )
         val_loss *= training_config.world_size / len(val_loader.dataset)
 
@@ -210,7 +204,6 @@ def train_one_epoch(
     rank: int | torch.device,
     epoch: int,
     max_norm: Optional[float] = None,
-    freq_output__train: Optional[int] = 10,
 ) -> Tuple[float, float]:
     """
     Train model for one epoch.
@@ -225,7 +218,6 @@ def train_one_epoch(
         rank: Device on which the code is executed.
         epoch: Current epoch index.
         max_norm: Maximum norm of the gradients.
-        freq_output__train: Frequency at which to print the training info.
 
     Returns:
         Summsed training loss for all batches for the single epoch, train
@@ -279,7 +271,6 @@ def train_one_epoch(
                 epoch=epoch,
                 loss=loss * num_grad_accum_steps / batch_size,
                 mode="train",
-                frequency=freq_output__train,
             )
 
     return epoch_loss, num_correct / num_samples
@@ -294,7 +285,6 @@ def validate_one_epoch(
     rank: int | torch.device,
     use_amp: bool,
     epoch: int,
-    freq_output__val: Optional[int] = 10,
 ) -> Tuple[float, float]:
     """
     Validate model for one epoch.
@@ -306,7 +296,6 @@ def validate_one_epoch(
         rank: Device on which the code is executed.
         use_amp: Whether to use automatic mixed precision.
         epoch: Current epoch index.
-        freq_output__val: Frequency at which to print the validation info.
 
     Returns:
         Summsed training loss for all batches for the single epoch, train
@@ -344,7 +333,6 @@ def validate_one_epoch(
                 epoch=epoch,
                 loss=val_loss / batch_size,
                 mode="val",
-                frequency=freq_output__val,
             )
 
     return epoch_loss, val_num_correct / val_num_samples
