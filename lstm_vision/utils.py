@@ -342,8 +342,9 @@ def get_model(
         bidirectional=bidirectional,
         dropout_rate=dropout_rate,
     )
+    if compile_mode is not None:
+        model.compile(mode=compile_mode)
     model.to(device)
-
     if use_ddp:
         model = DDP(model, device_ids=[device])
 

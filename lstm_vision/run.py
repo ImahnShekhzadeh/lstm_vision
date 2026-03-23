@@ -79,9 +79,8 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         dropout_rate=cfg.model.dropout,
         device=rank,
         use_ddp=cfg.training.use_ddp,
+        compile_mode=cfg.training.compilation_mode,
     )
-    if cfg.training.compilation_mode is not None:
-        model.compile(mode=cfg.training.compilation_mode)
     optimizer = optim.AdamW(
         params=model.parameters(),
         lr=cfg.optim.learning_rate,
