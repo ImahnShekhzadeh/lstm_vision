@@ -17,7 +17,7 @@ The Docker image consumes $8.31$ GB of disk space.
 #### Single-GPU
 On a single-GPU machine, I ran the script `run.py` as follows:
 ```
-docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.6.0 uv run /app/lstm_vision/run.py
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.6.0 uv run /app/lstm_vision/run.py optim.eta_min=1e-8 optim.learning_rate=3e-3
 ```
 The first time you run the `docker run [...]` command, packages will be prepared. This might take some time, however, it is a one-time thing.\
 To check all available config keys, check out the file `configs/conf.yaml`.

@@ -15,5 +15,5 @@ jobs:
         with:
           activate-environment: "true"
           python-version: "3.11.11"
-      - run: uv pip install -r pyproject.toml
+      - run: uv pip install -e ".[dev]"
       - run: pytest
