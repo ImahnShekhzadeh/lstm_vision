@@ -13,21 +13,25 @@ requires-python = ">=3.11"
 
 # https://docs.astral.sh/uv/concepts/projects/dependencies/#platform-specific-dependencies
 dependencies = [
-    "isort==5.12.*",
-    "black==23.10.*",
     "wandb==0.16.*",
     "torchinfo==1.8.*",
     "prettytable==3.9.*",
     "python-dotenv==1.0.*",
     "matplotlib>=3.2",
-    "pre-commit",
     "zeus-ml==0.9.*",
     "hydra-core==1.3.*",
-    "typeguard==4.4.*",
     "numpy==1.26.*",
     "torch==2.10.*",
     "torchvision==0.25.*",
-    "pytest==9.0.*",
+    "typeguard==4.4.*",
+]
+
+[project.optional-dependencies]
+dev = [
+  "isort==5.12.*",
+  "black==23.10.*",
+  "pytest==9.0.*",
+  "pre-commit",
 ]
 
 [tool.setuptools.packages.find]
