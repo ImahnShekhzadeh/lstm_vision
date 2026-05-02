@@ -154,5 +154,6 @@ def get_confusion_matrix(
         pad_inches=0.01,
         dpi=600,
     )
+    plt.close()
 
     return confusion_matrix

@@ -22,6 +22,12 @@ docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.6.0 
 The first time you run the `docker run [...]` command, packages will be prepared. This might take some time, however, it is a one-time thing.\
 To check all available config keys, check out the file `configs/conf.yaml`.
 
+To do a hyperparameter sweep, add `hydra.mode=MULTIRUN` and several values for the parameter you want to sweep over, e.g.
+```
+docker run --shm-size 512m --rm -v $(pwd):/app --gpus all -it lstm-vision:1.6.0 uv run /app/lstm_vision/run.py hydra.mode=MULTIRUN optim.eta_min=0,1e-8,1e-6 optim.T_0=20,30 training.num_epochs=60
+```
+Refer to the [hydra documentation](https://hydra.cc/docs/tutorials/basic/running_your_app/multi-run/) for more details.
+
 If you only want to evaluate the model from a pre-existing checkpoint, add
 ```
 model.loading_path=... training.num_epochs=0
