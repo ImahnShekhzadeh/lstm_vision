@@ -55,6 +55,11 @@ Now install all required modules by running
 ```
 uv pip install -r pyproject.toml
 ```
+If you also want to install the optional dependencies, run
+```
+uv pip install -e ".[dev]"
+```
+instead.
 Now for single-GPU training, run
 ```
 uv run --active lstm_vision/run.py
