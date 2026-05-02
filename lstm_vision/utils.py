@@ -665,7 +665,7 @@ def print__batch_info(
     )
 
     epoch_str = f"{mode.capitalize()} epoch: {epoch}"
-    sample_info_str = f"{current_samples}/{total_samples}"
+    sample_info_str = f"[{current_samples}/{total_samples}]"
     loss_str = f"Loss: {loss:.4f}"
 
     logging.info(f"{epoch_str}\t{sample_info_str}\t{loss_str}")
