@@ -30,6 +30,9 @@ dependencies = [
     "pytest==9.0.*",
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+
 # https://docs.astral.sh/uv/guides/integration/pytorch/#installing-pytorch
 [[tool.uv.index]]
 name = "pytorch-cu130"
@@ -54,4 +57,3 @@ known_third_party=["wandb"]
 
 [tool.black]
 line-length = 79
-exclude = "setup.py"

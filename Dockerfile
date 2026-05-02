@@ -12,7 +12,6 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY setup.py .
 COPY pyproject.toml .
 
 # Install uv acc. to the instructions
