@@ -52,6 +52,7 @@ class TrainingConfig:
 def train_and_validate(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
+    scheduler: torch.optim.lr_scheduler,
     rank: int | torch.device,
     train_loader: DataLoader,
     val_loader: DataLoader,
@@ -65,6 +66,7 @@ def train_and_validate(
     Args:
         model: Model to train.
         optimizer: Optimizer to use.
+        scheduler: Learning rate scheduler.
         rank: Device on which the code is executed.
         train_loader: Dataloader for the training set.
         val_loader: Dataloader for the validation set.
@@ -129,6 +131,8 @@ def train_and_validate(
         )
         val_loss *= training_config.world_size / len(val_loader.dataset)
 
+        scheduler.step()
+
         if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
             checkpoint_best = {
@@ -175,6 +179,7 @@ def train_and_validate(
                 train_acc=train_acc,
                 val_acc=val_acc,
                 epoch=epoch,
+                lr=scheduler.get_last_lr()[0],
                 start_time__epoch=start_time__epoch,
                 wandb_logging=training_config.wandb_logging,
             )

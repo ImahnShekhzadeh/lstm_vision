@@ -88,6 +88,12 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         eps=cfg.optim.eps,
         weight_decay=cfg.optim.weight_decay,
     )
+    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer=optimizer,
+        T_0=cfg.optim.T_0,
+        T_mult=cfg.optim.T_mult,
+        eta_min=cfg.optim.eta_min,
+    )
 
     wandb_logging = initialize_logging(
         rank=rank,
@@ -122,6 +128,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             cfg=cfg,
             model=model,
             optimizer=optimizer,
+            scheduler=scheduler,
             rank=rank,
             world_size=world_size,
             train_loader=train_loader,
@@ -171,6 +178,7 @@ def exec__training_validation(
     cfg: DictConfig,
     model: nn.Module,
     optimizer: nn.Module,
+    scheduler: torch.optim.lr_scheduler,
     rank: int | torch.device,
     world_size: int,
     train_loader: DataLoader,
@@ -186,6 +194,7 @@ def exec__training_validation(
         cfg: Configuration dictionary from hydra containing keys and values.
         model: Neural network to be optimized.
         optimizer: Optimizer.
+        scheduler: Learning rate scheduler.
         rank: Device on which the code is executed.
         world_size: Number of processes participating in distributed training.
             If `world_size` is 1, no distributed training is used.
@@ -214,6 +223,7 @@ def exec__training_validation(
     train_and_validate(
         model=model,
         optimizer=optimizer,
+        scheduler=scheduler,
         rank=rank,
         train_loader=train_loader,
         val_loader=val_loader,

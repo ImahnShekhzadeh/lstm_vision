@@ -159,6 +159,7 @@ def log__after_epoch(
     train_acc: float,
     val_acc: float,
     epoch: int,
+    lr: float,
     start_time__epoch: float,
     wandb_logging: bool = False,
 ) -> None:
@@ -171,6 +172,7 @@ def log__after_epoch(
         train_acc: Training accuracy.
         val_acc: Validation accuracy.
         epoch: Epoch (starts with `0`).
+        lr: Learning rate used during epoch.
         start_time__epoch: Start time of epoch training.
         wandb_logging: Whether logging to Weights & Biases occurs.
     """
@@ -188,8 +190,8 @@ def log__after_epoch(
         )
 
     logging.info(
-        f"\nEpoch {epoch}: {perf_counter() - start_time__epoch:.3f} [sec]\t"
-        f"Mean train/val loss: {train_loss:.4f}/{val_loss:.4f}\t"
+        f"\nEpoch {epoch}: {perf_counter() - start_time__epoch:.3f} [sec]"
+        f"\tLR: {lr:.3E}\tMean train/val loss: {train_loss:.4f}/{val_loss:.4f}\t"
         f"Train/val acc: "
         f"{1e2 * train_acc:.2f} %/{1e2 * val_acc:.2f} %\n"
     )

@@ -19,6 +19,11 @@ optim:
   beta_2: 0.999
   eps: 1e-8
   weight_decay: 0.0
+  # Following params correspond to those of `CosineAnnearlingWarmRestarts`, see
+  # https://docs.pytorch.org/docs/2.10/generated/torch.optim.lr_scheduler.CosineAnnealingWarmRestarts.html
+  T_0: 20
+  T_mult: 1
+  eta_min: 0
 
 training:
   seed_number: 0
