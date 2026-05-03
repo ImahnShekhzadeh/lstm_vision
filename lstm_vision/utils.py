@@ -6,7 +6,6 @@ import random
 import subprocess
 from datetime import datetime as dt
 from time import perf_counter
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import torch
@@ -205,7 +204,7 @@ def save_cp_log__after_training(
     num_epochs: int,
     world_size: int,
     start_time: float,
-    checkpoint_best: Dict,
+    checkpoint_best: dict,
     saving_path: str,
     saving_name_best_cp: str,
 ) -> None:
@@ -309,7 +308,7 @@ def get_model(
     bidirectional: bool,
     dropout_rate: float,
     device: torch.device | int,
-    compile_mode: Optional[str] = None,
+    compile_mode: str | None = None,
     use_ddp: bool = False,
 ) -> nn.Module:
     """
@@ -403,7 +402,7 @@ def check_config_keys(cfg: DictConfig) -> None:
 @typechecked
 def get_datasets(
     channels_img: int, train_split: float
-) -> Tuple[
+) -> tuple[
     torch.utils.data.Dataset,
     torch.utils.data.Dataset,
     torch.utils.data.Dataset,
@@ -481,8 +480,8 @@ def get_sampler_loaders(
     num_workers: int,
     pin_memory: bool,
     use_ddp: bool = False,
-    seed_number: Optional[int] = None,
-) -> Tuple[Optional[Sampler], DataLoader, DataLoader, DataLoader]:
+    seed_number: int | None = None,
+) -> tuple[Sampler | None, DataLoader, DataLoader, DataLoader]:
     """
     Get the train sampler as well as train/val/test dataloaders.
 
@@ -674,8 +673,8 @@ def print__batch_info(
 @typechecked
 def load_checkpoint(
     model: nn.Module,
-    checkpoint: Dict,
-    optimizer: Optional[torch.optim.Optimizer] = None,
+    checkpoint: dict,
+    optimizer: torch.optim.Optimizer | None = None,
 ) -> None:
     """Load an existing checkpoint of the model to continue training.
 
@@ -716,7 +715,7 @@ def load_checkpoint(
 
 
 @typechecked
-def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
+def save_checkpoint(state: dict, filename: str = "my_checkpoint.pt") -> None:
     """
     Save checkpoint.
 

@@ -1,7 +1,6 @@
 import os
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import torch
 from torch import autocast, nn
@@ -33,7 +32,7 @@ class TrainingConfig:
     num_grad_accum_steps: int  # number of gradient accumulation steps
     world_size: int  # number of processes participating in distributed training
     use_amp: bool  # whether automatic mixed precision is used
-    max_norm: Optional[float] = None  # maximum norm of gradients
+    max_norm: float | None = None  # maximum norm of gradients
     label_smoothing: float = (
         0.0  # amount of smoothing applied when calculating loss
     )
@@ -41,8 +40,8 @@ class TrainingConfig:
     # Checkpoint and saving params
     num_additional_cps: int = 0
     # number of additional checkpoints (besides the one for lowest val loss)
-    saving_path: Optional[str] = None  # directory path for checkpoints
-    saving_name_best_cp: Optional[str] = None  # saving name of best checkpoint
+    saving_path: str | None = None  # directory path for checkpoints
+    saving_name_best_cp: str | None = None  # saving name of best checkpoint
 
     # Wandb
     wandb_logging: bool = False  # whether logging to Weights & Biases occurs
@@ -57,7 +56,7 @@ def train_and_validate(
     train_loader: DataLoader,
     val_loader: DataLoader,
     training_config: TrainingConfig,
-    train_sampler: Optional[Sampler] = None,
+    train_sampler: Sampler | None = None,
 ) -> None:
     """
     Train and validate the model. The code will always save a checkpoint
@@ -208,8 +207,8 @@ def train_one_epoch(
     scaler: torch.amp.GradScaler,
     rank: int | torch.device,
     epoch: int,
-    max_norm: Optional[float] = None,
-) -> Tuple[float, float]:
+    max_norm: float | None = None,
+) -> tuple[float, float]:
     """
     Train model for one epoch.
 
@@ -290,7 +289,7 @@ def validate_one_epoch(
     rank: int | torch.device,
     use_amp: bool,
     epoch: int,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Validate model for one epoch.
 

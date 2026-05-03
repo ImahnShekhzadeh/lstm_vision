@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional
 
 import hydra
 import torch
@@ -185,7 +184,7 @@ def exec__training_validation(
     val_loader: DataLoader,
     output_dir: str,
     wandb_logging: bool,
-    train_sampler: Optional[Sampler] = None,
+    train_sampler: Sampler | None = None,
 ) -> None:
     """
     Execute training and validation.
