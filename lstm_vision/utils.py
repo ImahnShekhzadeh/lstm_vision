@@ -700,15 +700,15 @@ def load_checkpoint(
     if optimizer is not None:
         optimizer.load_state_dict(state_dict=checkpoint["optimizer"])
 
-    if "epoch" in checkpoint.keys():
+    if "epoch" in checkpoint:
         loading_msg += f" It had been saved at epoch {checkpoint['epoch']}."
-    elif "step" in checkpoint.keys():
+    elif "step" in checkpoint:
         loading_msg += f" It had been saved at step {checkpoint['step']}."
 
-    if "val_loss" in checkpoint.keys():
+    if "val_loss" in checkpoint:
         loading_msg += f" Validation loss: {checkpoint['val_loss']:.4f}."
 
-    if "val_acc" in checkpoint.keys():
+    if "val_acc" in checkpoint:
         loading_msg += (
             f" Validation accuracy: {100 * checkpoint['val_acc']:.2f} %."
         )
@@ -731,15 +731,15 @@ def save_checkpoint(state: Dict, filename: str = "my_checkpoint.pt") -> None:
     ), "The checkpoint does not have a correct file ending!"
 
     log_msg = f"\n=> Saving checkpoint '{filename}' "
-    if "val_loss" in state.keys():
+    if "val_loss" in state:
         log_msg += (
             f"corresponding to a validation loss of {state['val_loss']:.4f} "
         )
-    if "val_acc" in state.keys():
+    if "val_acc" in state:
         log_msg += (
             f"and a validation accuracy of {100 * state['val_acc']:.2f} % "
         )
-    if "epoch" in state.keys():
+    if "epoch" in state:
         log_msg += f"at epoch {state['epoch']}."
     logging.info(log_msg)
 
