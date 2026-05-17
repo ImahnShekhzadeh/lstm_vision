@@ -16,7 +16,7 @@ from train import TrainingConfig, str__cuda_0, train_and_validate
 from utils import (
     cleanup,
     get_datasets,
-    get_model,
+    get_models,
     get_sampler_loaders,
     initialize_logging,
     load_checkpoint,
@@ -68,7 +68,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
     inp_size = test_loader.dataset[0][0].shape[2]
     num_classes = len(test_loader.dataset.classes)
 
-    model = get_model(
+    model, ema_model = get_models(
         input_size=inp_size,
         num_layers=cfg.model.num_layers,
         hidden_size=cfg.model.hidden_size,
@@ -114,6 +114,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 
         load_checkpoint(
             model=model,
+            ema_model=ema_model,
             optimizer=optimizer,
             checkpoint=torch.load(
                 cfg.model.loading_path,
@@ -126,6 +127,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
         exec__training_validation(
             cfg=cfg,
             model=model,
+            ema_model=ema_model,
             optimizer=optimizer,
             scheduler=scheduler,
             rank=rank,
@@ -137,37 +139,41 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
             wandb_logging=wandb_logging,
         )
 
-    check_accuracy(
-        rank=rank,
-        loader=train_loader,
-        model=model,
-        use_amp=cfg.training.use_amp,
-        mode="train",
-        device=rank,
-        use_ddp=cfg.training.use_ddp,
-    )
+    for idx, neural_net in enumerate([model, ema_model]):
+        check_accuracy(
+            rank=rank,
+            loader=train_loader,
+            model=neural_net,
+            model_type="normal" if idx == 0 else "EMA",
+            use_amp=cfg.training.use_amp,
+            mode="train",
+            device=rank,
+            use_ddp=cfg.training.use_ddp,
+        )
 
     if cfg.training.use_ddp:
         cleanup()  # destroy process group, clean exit
 
     if rank in [0, torch.device("cpu")]:
-        check_accuracy(
-            rank=rank,
-            loader=test_loader,
-            model=model,
-            use_amp=cfg.training.use_amp,
-            mode="test",
-            device=rank,
-            use_ddp=False,
-        )
-        get_confusion_matrix(
-            num_classes,
-            test_loader,
-            model,
-            use_amp=cfg.training.use_amp,
-            saving_path=output_dir,
-            device=rank,
-        )
+        for idx, neural_net in enumerate([model, ema_model]):
+            check_accuracy(
+                rank=rank,
+                loader=test_loader,
+                model=neural_net,
+                model_type="normal" if idx == 0 else "EMA",
+                use_amp=cfg.training.use_amp,
+                mode="test",
+                device=rank,
+                use_ddp=False,
+            )
+            get_confusion_matrix(
+                num_classes=num_classes,
+                test_loader=test_loader,
+                model=neural_net,
+                use_amp=cfg.training.use_amp,
+                saving_path=output_dir,
+                device=rank,
+            )
 
         if wandb_logging:
             wandb.finish()
@@ -176,6 +182,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 def exec__training_validation(
     cfg: DictConfig,
     model: nn.Module,
+    ema_model: nn.Module,
     optimizer: nn.Module,
     scheduler: torch.optim.lr_scheduler,
     rank: int | torch.device,
@@ -192,6 +199,7 @@ def exec__training_validation(
     Args:
         cfg: Configuration dictionary from hydra containing keys and values.
         model: Neural network to be optimized.
+        ema_model: EMA version of the model.
         optimizer: Optimizer.
         scheduler: Learning rate scheduler.
         rank: Device on which the code is executed.
@@ -221,12 +229,14 @@ def exec__training_validation(
 
     train_and_validate(
         model=model,
+        ema_model=ema_model,
         optimizer=optimizer,
         scheduler=scheduler,
         rank=rank,
         train_loader=train_loader,
         val_loader=val_loader,
         training_config=training_config,
+        ema_model=cfg.training.ema_momentum,
         train_sampler=train_sampler,
     )
 
@@ -242,6 +252,7 @@ def exec__training_validation(
         map_location = {str__cuda_0: f"cuda:{rank}"}
     load_checkpoint(
         model=model,
+        ema_model=ema_model,
         checkpoint=torch.load(
             os.path.join(output_dir, saving_name_best_cp),
             map_location=map_location,

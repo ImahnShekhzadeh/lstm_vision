@@ -40,3 +40,4 @@ training:
   saving_path: "outputs"
   label_smoothing: 0.1
   compilation_mode: "default"  # for `torch.compile`
+  ema_momentum: 0.9999  # EMA momentum

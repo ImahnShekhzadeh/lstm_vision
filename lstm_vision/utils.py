@@ -4,6 +4,7 @@ import math
 import os
 import random
 import subprocess
+from copy import deepcopy
 from datetime import datetime as dt
 from time import perf_counter
 
@@ -299,7 +300,7 @@ def cleanup() -> None:
 
 
 @typechecked
-def get_model(
+def get_models(
     input_size: int,
     num_layers: int,
     hidden_size: int,
@@ -310,8 +311,9 @@ def get_model(
     device: torch.device | int,
     compile_mode: str | None = None,
     use_ddp: bool = False,
-) -> nn.Module:
+) -> tuple[nn.Module, nn.Module]:
     """
+    Get the model and its EMA version.
 
     Args:
         input_size: input is assumed to be in shape `(N, 1, H, W)`,
@@ -331,7 +333,7 @@ def get_model(
         use_ddp: Whether to use DDP.
 
     Returns:
-        Model.
+        Model and its EMA version.
     """
 
     model = LSTM(
@@ -345,11 +347,15 @@ def get_model(
     )
     if compile_mode is not None:
         model.compile(mode=compile_mode)
+
     model.to(device)
+    ema_model = deepcopy(model)
+
     if use_ddp:
         model = DDP(model, device_ids=[device])
+        ema_model = DDP(ema_model, device_ids=[device])
 
-    return model
+    return model, ema_model
 
 
 @typechecked
@@ -673,6 +679,7 @@ def print__batch_info(
 @typechecked
 def load_checkpoint(
     model: nn.Module,
+    ema_model: nn.Module,
     checkpoint: dict,
     optimizer: torch.optim.Optimizer | None = None,
 ) -> None:
@@ -680,11 +687,14 @@ def load_checkpoint(
 
     Args:
         model: NN for which state dict is loaded.
+        ema_model: EMA NN for which state dict is loaded.
         checkpoint: Checkpoint dictionary.
         optimizer: Optimizer for which state dict is loaded.
     """
+
     try:
         model.load_state_dict(state_dict=checkpoint["state_dict"])
+        ema_model.load_state_dict(state_dict=checkpoint["ema__state_dict"])
     except RuntimeError:
         # assume that model was saved in DDP setup, but now it is attempted
         # to load the model state dict onto a single GPU; fix by removing
@@ -693,6 +703,11 @@ def load_checkpoint(
         for k, v in checkpoint["state_dict"].items():
             new_state_dict[k.replace("module.", "")] = v
         model.load_state_dict(state_dict=new_state_dict)
+
+        new_state_dict = {}
+        for k, v in checkpoint["ema__state_dict"].items():
+            new_state_dict[k.replace("module.", "")] = v
+        ema_model.load_state_dict(state_dict=new_state_dict)
     else:
         loading_msg = "=> Checkpoint loaded."
 

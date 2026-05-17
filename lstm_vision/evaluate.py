@@ -15,6 +15,7 @@ def check_accuracy(
     rank: int | torch.device,
     loader: DataLoader,
     model: nn.Module,
+    model_type: str,
     use_amp: bool,
     mode: str,
     device: int | torch.device,
@@ -28,6 +29,7 @@ def check_accuracy(
             GPU is available.
         loader: Dataloader of the dataset for which to check the accuracy.
         model: Model.
+        model_type: Whether the normal or EMA model is used.
         use_amp: Whether to use automatic mixed precision.
         mode: Mode in which the model is in. Either "train" or "test".
         device: Device on which the code is executed.
@@ -35,6 +37,7 @@ def check_accuracy(
     """
 
     assert mode in ["train", "test"]
+    assert model_type in ["normal", "EMA"]
 
     model.eval()
     num_correct, num_samples = 0, 0
@@ -76,7 +79,8 @@ def check_accuracy(
     if rank in [0, torch.device("cpu")]:
         logging.info(
             f"\n{mode.capitalize()} data: Got {num_correct}/{num_samples} ("
-            f"accuracy = {(100 * num_correct / num_samples):.2f} %)"
+            f"accuracy = {(100 * num_correct / num_samples):.2f} %) for the "
+            f"{model_type} model."
         )
 
 
@@ -86,6 +90,7 @@ def get_confusion_matrix(
     num_classes: int,
     test_loader: DataLoader,
     model: nn.Module,
+    model_type: str,
     use_amp: bool,
     saving_path: str,
     device: int | torch.device,
@@ -97,6 +102,7 @@ def get_confusion_matrix(
         num_classes: Number of classes neural networks predicts at the end.
         test_loader: DataLoader for the test dataset.
         model: Model.
+        model_type: Whether the normal or EMA model is used.
         use_amp: Whether to use automatic mixed precision.
         saving_path: Saving path where the confusion matrix is stored.
         device: Device on which the code is executed.
@@ -104,6 +110,9 @@ def get_confusion_matrix(
     Returns:
         Confusion matrix.
     """
+
+    assert model_type in ["normal", "EMA"]
+
     model.eval()
     confusion_matrix = torch.zeros(num_classes, num_classes)
 
@@ -147,7 +156,7 @@ def get_confusion_matrix(
     plt.savefig(
         os.path.join(
             saving_path,
-            "confusion_matrix.pdf",
+            f"confusion_matrix_{model_type}.pdf",
         ),
         bbox_inches="tight",
         pad_inches=0.01,

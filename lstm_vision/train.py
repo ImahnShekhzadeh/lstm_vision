@@ -3,6 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 
 import torch
+from ema import update_ema_model
 from torch import autocast, nn
 from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
@@ -50,12 +51,14 @@ class TrainingConfig:
 @typechecked
 def train_and_validate(
     model: nn.Module,
+    ema_model: nn.Module,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler,
     rank: int | torch.device,
     train_loader: DataLoader,
     val_loader: DataLoader,
     training_config: TrainingConfig,
+    ema_momentum: float,
     train_sampler: Sampler | None = None,
 ) -> None:
     """
@@ -64,6 +67,7 @@ def train_and_validate(
 
     Args:
         model: Model to train.
+        ema_model: EMA version of the model.
         optimizer: Optimizer to use.
         scheduler: Learning rate scheduler.
         rank: Device on which the code is executed.
@@ -71,6 +75,7 @@ def train_and_validate(
         val_loader: Dataloader for the validation set.
         training_config: Training configuration containing all training,
             checkpoint/saving and logging parameters.
+        ema_momentum: EMA momentum.
         train_sampler: Sampler for the training set.
     """
 
@@ -97,6 +102,7 @@ def train_and_validate(
 
     start_time = start_timer(device=rank)
     model.train()
+    ema_model.train()
     for epoch in range(training_config.num_epochs):
         start_time__epoch = start_timer(device=rank)
 
@@ -131,11 +137,13 @@ def train_and_validate(
         val_loss *= training_config.world_size / len(val_loader.dataset)
 
         scheduler.step()
+        update_ema_model(model, ema_model, ema_momentum)
 
         if val_loss < min_val_loss and save_or_log:
             min_val_loss = val_loss
             checkpoint_best = {
                 "state_dict": deepcopy(model.state_dict()),
+                "ema__state_dict": deepcopy(ema_model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
                 "val_loss": val_loss,
                 "val_acc": val_acc,
@@ -156,6 +164,7 @@ def train_and_validate(
         ):
             checkpoint = {
                 "state_dict": deepcopy(model.state_dict()),
+                "ema__state_dict": deepcopy(ema_model.state_dict()),
                 "optimizer": deepcopy(optimizer.state_dict()),
                 "val_loss": val_loss,
                 "val_acc": val_acc,
