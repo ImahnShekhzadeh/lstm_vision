@@ -156,11 +156,12 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
 
     if rank in [0, torch.device("cpu")]:
         for idx, neural_net in enumerate([model, ema_model]):
+            model_type = "normal" if idx == 0 else "EMA"
             check_accuracy(
                 rank=rank,
                 loader=test_loader,
                 model=neural_net,
-                model_type="normal" if idx == 0 else "EMA",
+                model_type=model_type,
                 use_amp=cfg.training.use_amp,
                 mode="test",
                 device=rank,
@@ -170,6 +171,7 @@ def run(rank: int | torch.device, world_size: int, cfg: DictConfig) -> None:
                 num_classes=num_classes,
                 test_loader=test_loader,
                 model=neural_net,
+                model_type=model_type,
                 use_amp=cfg.training.use_amp,
                 saving_path=output_dir,
                 device=rank,
@@ -236,7 +238,7 @@ def exec__training_validation(
         train_loader=train_loader,
         val_loader=val_loader,
         training_config=training_config,
-        ema_model=cfg.training.ema_momentum,
+        ema_momentum=cfg.training.ema_momentum,
         train_sampler=train_sampler,
     )
 
